@@ -23,8 +23,8 @@ namespace QuestAWAY
 
         public void Dispose()
         {
-            pi.Dispose();
             pi.Framework.OnUpdateEvent -= Tick;
+            pi.Dispose();
         }
 
         public void Initialize(DalamudPluginInterface pluginInterface)
