@@ -8,6 +8,7 @@ using ImGuiNET;
 using ImGuiScene;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.ExceptionServices;
@@ -290,7 +291,7 @@ namespace QuestAWAY
 
         bool StartsWithAny(byte* sPtr, byte[][] set)
         {
-            foreach(var b in set)
+            foreach (var b in set)
             {
                 for(int i = 0; i < b.Length; i++)
                 {

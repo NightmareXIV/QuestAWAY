@@ -194,6 +194,7 @@ namespace QuestAWAY
                 "ui/icon/060000/060779",
                 "ui/icon/071000/071032",
                 "ui/icon/060000/060758",
+                "ui/icon/060000/060446",
         };
     }
 }
