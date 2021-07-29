@@ -50,6 +50,7 @@ namespace QuestAWAY
             textures = new Dictionary<string, TextureWrap>();
             cfg = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             cfg.Initialize(this);
+            BuildByteSet();
             Static.PaddingVector = ImGui.GetStyle().WindowPadding;
             pi.Framework.OnUpdateEvent += Tick;
             pi.UiBuilder.OnBuildUi += Draw;
@@ -153,6 +154,20 @@ namespace QuestAWAY
                     ImGui.Text("Icons to hide:");
                     ImGui.SameLine();
                     ImGui.Checkbox("Only selected", ref onlySelected);
+                    ImGui.SameLine();
+                    ImGui.SetNextItemWidth(100f);
+                    if (ImGui.BeginCombo("##QASELOPT", "Select..."))
+                    {
+                        if (ImGui.Selectable("All"))
+                        {
+                            cfg.HiddenTextures.UnionWith(Static.MapIcons);
+                        }
+                        if (ImGui.Selectable("None"))
+                        {
+                            cfg.HiddenTextures.Clear();
+                        }
+                        ImGui.EndCombo();
+                    }
                     ImGui.BeginChild("##QAWAYCHILD");
                     ImGuiHelpers.ScaledDummy(10f);
                     var width = ImGui.GetColumnWidth();
@@ -177,9 +192,9 @@ namespace QuestAWAY
                                 cfg.HiddenTextures.Add(e);
                             }
                             ImGui.SameLine();
-                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 11 * ImGuiHelpers.GlobalScale);
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 11);
                             ImGuiDrawImage(e+"_hr1");
-                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 11 * ImGuiHelpers.GlobalScale);
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 11);
                             ImGui.NextColumn();
                         }
                     }
@@ -216,8 +231,8 @@ namespace QuestAWAY
                             if (cfg.QuickEnable)
                             {
                                 openQuickEnable = true;
-                                quickMenuPos.X = masterWindow->X + mapCNode->AtkResNode.X + mapCNode->AtkResNode.Width/2 - quickMenuSize.X / 2;
-                                quickMenuPos.Y = masterWindow->Y + mapCNode->AtkResNode.Y - quickMenuSize.Y;
+                                quickMenuPos.X = masterWindow->X + mapCNode->AtkResNode.X * masterWindow->Scale + mapCNode->AtkResNode.Width * masterWindow->Scale / 2 - quickMenuSize.X / 2;
+                                quickMenuPos.Y = masterWindow->Y + mapCNode->AtkResNode.Y * masterWindow->Scale - quickMenuSize.Y;
                             }
                             else
                             {
