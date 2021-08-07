@@ -11,19 +11,11 @@ namespace QuestAWAY
 {
     public static class Static
     {
-        public static bool StartsWithAny(this string s, ISet<string> set)
-        {
-            foreach (var e in set)
-            {
-                if (s.StartsWith(e)) return true;
-            }
-            return false;
-        }
-
         public const uint ActiveToggleButtonColor = 0x6600b500;
 
-        public static void ImGuiToggleButton(string text, ref bool flag)
+        public static bool ImGuiToggleButton(string text, ref bool flag)
         {
+            var state = false;
             var colored = false;
             if (flag)
             {
@@ -35,11 +27,13 @@ namespace QuestAWAY
             if (ImGui.Button(text))
             {
                 flag = !flag;
+                state = true;
             }
             if (colored)
             {
                 ImGui.PopStyleColor(3);
             }
+            return state;
         }
 
         public static Vector2 PaddingVector;
@@ -195,6 +189,18 @@ namespace QuestAWAY
                 "ui/icon/071000/071032",
                 "ui/icon/060000/060758",
                 "ui/icon/060000/060446",
+                "ui/icon/071000/071005",
+                "ui/icon/071000/071015",
+                "ui/icon/071000/071001",
+                "ui/icon/071000/071011",
+                "ui/icon/060000/060512",
+                "ui/icon/060000/060447",
+                "ui/icon/060000/060545",
+                "ui/icon/060000/060505",
+                "ui/icon/060000/060422",
+                "ui/icon/060000/060495",
+                "ui/icon/071000/071001",
+                "ui/icon/071000/071004",
         };
     }
 }

@@ -37,11 +37,13 @@ namespace QuestAWAY
         private bool onlySelected = false;
         private bool openQuickEnable = false;
         byte[][] cfgHideSet = { };
+        bool reprocess = false;
 
         public void Dispose()
         {
             pi.Framework.OnUpdateEvent -= Tick;
             pi.UiBuilder.OnBuildUi -= Draw;
+            cfg.Save();
             pi.Dispose();
         }
 
@@ -91,7 +93,7 @@ namespace QuestAWAY
                     | ImGuiWindowFlags.NoTitleBar
                     | ImGuiWindowFlags.NoFocusOnAppearing
                     );
-                Static.ImGuiToggleButton("QuestAWAY", ref cfg.Enabled);
+                if(Static.ImGuiToggleButton("QuestAWAY", ref cfg.Enabled)) reprocess = true;
                 Static.ImGuiTextTooltip((cfg.Enabled?"Disable":"Enable") + " plugin");
                 ImGui.SameLine();
                 if(Static.ImGuiIconButton(FontAwesomeIcon.Cog, "Settings"))
@@ -105,6 +107,8 @@ namespace QuestAWAY
 
             if (open)
             {
+                reprocess = true;
+                ImGui.SetNextWindowSize(new Vector2(500, 500), ImGuiCond.FirstUseEver);
                 if (ImGui.Begin("QuestAWAY configuration", ref open))
                 {
                     if (ImGui.CollapsingHeader("Settings"))
@@ -215,70 +219,81 @@ namespace QuestAWAY
         {
             try
             {
-                if (open) BuildByteSet();
-                if (cfg.Bigmap)
+                if (reprocess) BuildByteSet();
+                if ((cfg.Enabled && cfg.Bigmap) || reprocess)
                 {
-                    var o = pi.Framework.Gui.GetUiObjectByName("AreaMap", 1);
-                    if (o != IntPtr.Zero)
-                    {
-                        var masterWindow = (AtkUnitBase*)o;
-                        if (masterWindow->IsVisible)
-                        {
-                            var mapCNode = (AtkComponentNode*)masterWindow->UldManager.NodeList[3];
-                            for (var i = 6; i < mapCNode->Component->UldManager.NodeListCount; i++)
-                            {
-                                ProcessShit((AtkComponentNode*)mapCNode->Component->UldManager.NodeList[i]);
-                            }
-                            if (cfg.QuickEnable)
-                            {
-                                openQuickEnable = true;
-                                quickMenuPos.X = masterWindow->X + mapCNode->AtkResNode.X * masterWindow->Scale + mapCNode->AtkResNode.Width * masterWindow->Scale / 2 - quickMenuSize.X / 2;
-                                quickMenuPos.Y = masterWindow->Y + mapCNode->AtkResNode.Y * masterWindow->Scale - quickMenuSize.Y;
-                            }
-                            else
-                            {
-                                openQuickEnable = false;
-                            }
-                        }
-                        else
-                        {
-                            openQuickEnable = false;
-                        }
-                    }
+                    ProcessMap(!(cfg.Enabled && cfg.Bigmap));
                 }
-                if (cfg.Minimap)
+                if ((cfg.Enabled && cfg.Minimap) || reprocess)
                 {
-                    var o = pi.Framework.Gui.GetUiObjectByName("_NaviMap", 1);
-                    if (o != IntPtr.Zero)
-                    {
-                        var masterWindow = (AtkUnitBase*)o;
-                        if (masterWindow->IsVisible)
-                        {
-                            var mapCNode = (AtkComponentNode*)masterWindow->UldManager.NodeList[2];
-                            for (var i = 4; i < mapCNode->Component->UldManager.NodeListCount; i++)
-                            {
-                                ProcessShit((AtkComponentNode*)mapCNode->Component->UldManager.NodeList[i]);
-                            }
-                        }
-                    }
+                    ProcessMinimap(!(cfg.Enabled && cfg.Minimap));
                 }
+                reprocess = false;
             }
             catch (Exception e)
             {
-                pi.Framework.Gui.Chat.Print(e.Message);
+                PluginLog.Error("=== Error during QuestAway plugin execution ===" + e.Message + "\n" + e.StackTrace);
+                pi.Framework.Gui.Chat.Print("[QuestAway] An error occurred, please send your log to developer.");
             }
         }
 
-        void ProcessShit(AtkComponentNode* mapIconNode)
+        void ProcessMap(bool showAll = false)
+        {
+            var o = pi.Framework.Gui.GetUiObjectByName("AreaMap", 1);
+            if (o != IntPtr.Zero)
+            {
+                var masterWindow = (AtkUnitBase*)o;
+                if (masterWindow->IsVisible)
+                {
+                    var mapCNode = (AtkComponentNode*)masterWindow->UldManager.NodeList[3];
+                    for (var i = 6; i < mapCNode->Component->UldManager.NodeListCount; i++)
+                    {
+                        ProcessShit((AtkComponentNode*)mapCNode->Component->UldManager.NodeList[i], showAll);
+                    }
+                    if (cfg.QuickEnable)
+                    {
+                        openQuickEnable = true;
+                        quickMenuPos.X = masterWindow->X + mapCNode->AtkResNode.X * masterWindow->Scale + mapCNode->AtkResNode.Width * masterWindow->Scale / 2 - quickMenuSize.X / 2;
+                        quickMenuPos.Y = masterWindow->Y + mapCNode->AtkResNode.Y * masterWindow->Scale - quickMenuSize.Y;
+                    }
+                    else
+                    {
+                        openQuickEnable = false;
+                    }
+                }
+                else
+                {
+                    openQuickEnable = false;
+                }
+            }
+        }
+
+        void ProcessMinimap(bool showAll = false)
+        {
+            var o = pi.Framework.Gui.GetUiObjectByName("_NaviMap", 1);
+            if (o != IntPtr.Zero)
+            {
+                var masterWindow = (AtkUnitBase*)o;
+                if (masterWindow->IsVisible)
+                {
+                    var mapCNode = (AtkComponentNode*)masterWindow->UldManager.NodeList[2];
+                    for (var i = 4; i < mapCNode->Component->UldManager.NodeListCount; i++)
+                    {
+                        ProcessShit((AtkComponentNode*)mapCNode->Component->UldManager.NodeList[i], showAll);
+                    }
+                }
+            }
+        }
+
+        void ProcessShit(AtkComponentNode* mapIconNode, bool showUnconditionally = false)
         {
             if (!mapIconNode->AtkResNode.IsVisible) return;
             var imageNode = (AtkImageNode*)mapIconNode->Component->UldManager.NodeList[4];
             var textureInfo = imageNode->PartsList->Parts[imageNode->PartId].UldAsset;
             if (textureInfo->AtkTexture.TextureType == TextureType.Resource)
             {
-                var texFileNamePtr = textureInfo->AtkTexture.Resource->TexFileResourceHandle->ResourceHandle.FileName;
-                if (collect) texSet.Add(Marshal.PtrToStringAnsi((IntPtr)texFileNamePtr).Replace(".tex", "").Replace("_hr1", ""));
-                if (StartsWithAny((byte*)texFileNamePtr, cfgHideSet))
+                if (collect) texSet.Add(Marshal.PtrToStringAnsi((IntPtr)textureInfo->AtkTexture.Resource->TexFileResourceHandle->ResourceHandle.FileName).Replace(".tex", "").Replace("_hr1", ""));
+                if (!showUnconditionally && StartsWithAny((byte*)textureInfo->AtkTexture.Resource->TexFileResourceHandle->ResourceHandle.FileName, cfgHideSet))
                 {
                     if(mapIconNode->AtkResNode.Color.A != 0) mapIconNode->AtkResNode.Color.A = 0;
                 }
@@ -304,9 +319,17 @@ namespace QuestAWAY
 
         void BuildByteSet()
         {
-            cfgHideSet = new byte[cfg.HiddenTextures.Count][];
+            var userLines = cfg.CustomPathes.Split('\n');
+            for (var n = 0; n < userLines.Length; n++)
+            {
+                userLines[n] = userLines[n].Trim();
+            }
+            var userLinesSet = userLines.ToHashSet();
+            userLinesSet.RemoveWhere((string line) => { return line.Length == 0; });
+            userLinesSet.UnionWith(cfg.HiddenTextures);
+            cfgHideSet = new byte[userLinesSet.Count][];
             var i = 0;
-            foreach(var e in cfg.HiddenTextures)
+            foreach(var e in userLinesSet)
             {
                 cfgHideSet[i++] = Encoding.ASCII.GetBytes(e);
             }
