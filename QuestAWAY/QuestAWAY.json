@@ -2,5 +2,6 @@
   "Name": "QuestAWAY",
   "Author": "Eternita",
   "Description": "Removes unwanted icons from your map.",
-  "RepoUrl": "https://github.com/Eternita-S/QuestAWAY"
+  "RepoUrl": "https://github.com/Eternita-S/QuestAWAY",
+  "DalamudApiLevel": 3
 }

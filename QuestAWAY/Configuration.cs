@@ -17,6 +17,7 @@ namespace QuestAWAY
         public bool Minimap = true;
         public bool Bigmap = true;
         public bool QuickEnable = true;
+        public bool Superverbose = false;
         public HashSet<string> HiddenTextures = new HashSet<string>();
         public string CustomPathes = "";
 
