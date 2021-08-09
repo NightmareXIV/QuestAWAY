@@ -39,6 +39,10 @@ namespace QuestAWAY
         byte[][] cfgHideSet = { };
         bool reprocess = false;
         long tick = 0;
+        bool profiling = false;
+        long totalTime;
+        long totalTicks;
+        Stopwatch stopwatch;
 
         public void Dispose()
         {
@@ -59,6 +63,7 @@ namespace QuestAWAY
             pi.Framework.OnUpdateEvent += Tick;
             pi.UiBuilder.OnBuildUi += Draw;
             pi.UiBuilder.OnOpenConfigUi += delegate { open = true; };
+            stopwatch = new Stopwatch();
         }
 
         void ImGuiDrawImage(string partialPath)
@@ -160,6 +165,19 @@ namespace QuestAWAY
                             {
                                 cfg.HiddenTextures.Clear();
                             }
+                            ImGui.Checkbox("Profiling", ref profiling);
+                            if (profiling)
+                            {
+                                ImGui.Text("Total time: " + totalTime);
+                                ImGui.Text("Total ticks: " + totalTicks);
+                                ImGui.Text("Tick avg: " + (float)totalTime / (float)totalTicks);
+                                ImGui.Text("MS avg: " + ((float)totalTime / (float)totalTicks) / (float)Stopwatch.Frequency * 1000 + " ms");
+                                if (ImGui.Button("Reset##SW"))
+                                {
+                                    totalTicks = 0;
+                                    totalTime = 0;
+                                }
+                            }
                         }
                         ImGui.Separator();
                     }
@@ -226,6 +244,11 @@ namespace QuestAWAY
         {
             try
             {
+                if (profiling)
+                {
+                    totalTicks++;
+                    stopwatch.Restart();
+                }
                 Superverbose("Tick begins:" + ++tick);
                 if (reprocess) BuildByteSet();
                 if ((cfg.Enabled && cfg.Bigmap) || reprocess)
@@ -238,6 +261,11 @@ namespace QuestAWAY
                 }
                 reprocess = false;
                 Superverbose("Tick ends. ");
+                if (profiling)
+                {
+                    stopwatch.Stop();
+                    totalTime += stopwatch.ElapsedTicks;
+                }
             }
             catch (Exception e)
             {
