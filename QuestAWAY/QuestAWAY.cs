@@ -49,6 +49,10 @@ namespace QuestAWAY
             pi.Framework.OnUpdateEvent -= Tick;
             pi.UiBuilder.OnBuildUi -= Draw;
             cfg.Save();
+            foreach(var t in textures.Values)
+            {
+                t.Dispose();
+            }
             pi.Dispose();
         }
 
