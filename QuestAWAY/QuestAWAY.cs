@@ -255,6 +255,7 @@ namespace QuestAWAY
                 }
                 Superverbose("Tick begins:" + ++tick);
                 if (reprocess) BuildByteSet();
+                openQuickEnable = false;
                 if ((cfg.Enabled && cfg.Bigmap) || reprocess)
                 {
                     ProcessMap(!(cfg.Enabled && cfg.Bigmap));
@@ -300,14 +301,6 @@ namespace QuestAWAY
                         quickMenuPos.X = masterWindow->X + mapCNode->AtkResNode.X * masterWindow->Scale + mapCNode->AtkResNode.Width * masterWindow->Scale / 2 - quickMenuSize.X / 2;
                         quickMenuPos.Y = masterWindow->Y + mapCNode->AtkResNode.Y * masterWindow->Scale - quickMenuSize.Y;
                     }
-                    else
-                    {
-                        openQuickEnable = false;
-                    }
-                }
-                else
-                {
-                    openQuickEnable = false;
                 }
             }
         }
