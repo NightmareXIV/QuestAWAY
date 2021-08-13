@@ -255,10 +255,32 @@ namespace QuestAWAY
                 }
                 Superverbose("Tick begins:" + ++tick);
                 if (reprocess) BuildByteSet();
-                openQuickEnable = false;
-                if ((cfg.Enabled && cfg.Bigmap) || reprocess)
+                var o = pi.Framework.Gui.GetUiObjectByName("AreaMap", 1);
+                if (o != IntPtr.Zero)
                 {
-                    ProcessMap(!(cfg.Enabled && cfg.Bigmap));
+                    var masterWindow = (AtkUnitBase*)o;
+                    if (masterWindow->IsVisible)
+                    {
+                        var mapCNode = (AtkComponentNode*)masterWindow->UldManager.NodeList[3];
+                        openQuickEnable = cfg.QuickEnable;
+                        if (openQuickEnable)
+                        {
+                            quickMenuPos.X = masterWindow->X + mapCNode->AtkResNode.X * masterWindow->Scale + mapCNode->AtkResNode.Width * masterWindow->Scale / 2 - quickMenuSize.X / 2;
+                            quickMenuPos.Y = masterWindow->Y + mapCNode->AtkResNode.Y * masterWindow->Scale - quickMenuSize.Y;
+                        }
+                        if ((cfg.Enabled && cfg.Bigmap) || reprocess)
+                        {
+                            ProcessMap(!(cfg.Enabled && cfg.Bigmap), masterWindow, mapCNode);
+                        }
+                    }
+                    else
+                    {
+                        openQuickEnable = false;
+                    }
+                }
+                else
+                {
+                    openQuickEnable = false;
                 }
                 if ((cfg.Enabled && cfg.Minimap) || reprocess)
                 {
@@ -279,28 +301,17 @@ namespace QuestAWAY
             }
         }
 
-        void ProcessMap(bool showAll = false)
+        void ProcessMap(bool showAll, AtkUnitBase* masterWindow, AtkComponentNode* mapCNode)
         {
-            var o = pi.Framework.Gui.GetUiObjectByName("AreaMap", 1);
-            if (o != IntPtr.Zero)
+            Superverbose("Preparing to access map window");
+            if (masterWindow->IsVisible)
             {
-                var masterWindow = (AtkUnitBase*)o;
-                Superverbose("Preparing to access map window");
-                if (masterWindow->IsVisible)
+                Superverbose("Preparing to access map component node");
+                
+                for (var i = 6; i < mapCNode->Component->UldManager.NodeListCount; i++)
                 {
-                    Superverbose("Preparing to access map component node");
-                    var mapCNode = (AtkComponentNode*)masterWindow->UldManager.NodeList[3];
-                    for (var i = 6; i < mapCNode->Component->UldManager.NodeListCount; i++)
-                    {
-                        Superverbose("Preparing to process icon #"+i);
-                        ProcessShit((AtkComponentNode*)mapCNode->Component->UldManager.NodeList[i], showAll);
-                    }
-                    if (cfg.QuickEnable)
-                    {
-                        openQuickEnable = true;
-                        quickMenuPos.X = masterWindow->X + mapCNode->AtkResNode.X * masterWindow->Scale + mapCNode->AtkResNode.Width * masterWindow->Scale / 2 - quickMenuSize.X / 2;
-                        quickMenuPos.Y = masterWindow->Y + mapCNode->AtkResNode.Y * masterWindow->Scale - quickMenuSize.Y;
-                    }
+                    Superverbose("Preparing to process icon #"+i);
+                    ProcessShit((AtkComponentNode*)mapCNode->Component->UldManager.NodeList[i], showAll);
                 }
             }
         }
