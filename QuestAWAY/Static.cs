@@ -35,6 +35,28 @@ namespace QuestAWAY
             }
             return state;
         }
+        public static bool ImGuiToggleButton(FontAwesomeIcon icon, string tooltip, ref bool flag)
+        {
+            var state = false;
+            var colored = false;
+            if (flag)
+            {
+                colored = true;
+                ImGui.PushStyleColor(ImGuiCol.Button, ActiveToggleButtonColor);
+                ImGui.PushStyleColor(ImGuiCol.ButtonActive, ActiveToggleButtonColor);
+                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ActiveToggleButtonColor);
+            }
+            if (ImGuiIconButton(icon, tooltip))
+            {
+                flag = !flag;
+                state = true;
+            }
+            if (colored)
+            {
+                ImGui.PopStyleColor(3);
+            }
+            return state;
+        }
 
         public static Vector2 PaddingVector;
         public static bool ImGuiIconButton(FontAwesomeIcon icon, string tooltip)

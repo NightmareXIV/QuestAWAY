@@ -20,6 +20,7 @@ namespace QuestAWAY
         public bool Superverbose = false;
         public HashSet<string> HiddenTextures = new HashSet<string>();
         public string CustomPathes = "";
+        public bool HideFateCircles = false;
 
         [NonSerialized]
         private QuestAWAY p;
