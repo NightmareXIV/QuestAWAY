@@ -188,7 +188,7 @@ namespace QuestAWAY
                         }
                         ImGui.Separator();
                     }
-                    ImGui.Text("Specific hiding options:");
+                    ImGui.Text("Special hiding options:");
                     ImGui.Checkbox("Hide fate circles", ref cfg.HideFateCircles);
                     ImGui.Text("Icons to hide:");
                     ImGui.SameLine();
