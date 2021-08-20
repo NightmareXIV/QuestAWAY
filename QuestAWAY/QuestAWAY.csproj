@@ -60,6 +60,7 @@
     </Reference>
     <Reference Include="EasyHook">
       <HintPath>..\..\dev\EasyHook.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="FFXIVClientStructs, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
