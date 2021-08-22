@@ -21,6 +21,7 @@ namespace QuestAWAY
         public HashSet<string> HiddenTextures = new HashSet<string>();
         public string CustomPathes = "";
         public bool HideFateCircles = false;
+        public bool HideAreaMarkers = false;
 
         [NonSerialized]
         private QuestAWAY p;
