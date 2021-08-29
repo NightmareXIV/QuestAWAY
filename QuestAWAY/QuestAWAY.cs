@@ -135,12 +135,6 @@ namespace QuestAWAY
                         ImGui.InputTextMultiline("##QAUSERADD", ref cfg.CustomPathes, 1000000, new Vector2(300f, 100f));
                         if (ImGui.CollapsingHeader("Developer settings"))
                         {
-                            ImGui.Checkbox("[debug] Enable superverbosity", ref cfg.Superverbose);
-                            if (ImGui.IsItemHovered())
-                            {
-                                ImGui.SetTooltip("This will cause your log file to grow ENORMMOUS.\n" +
-                                    "But in case you are crashing, it will help to find out why.");
-                            }
                             ImGui.Checkbox("[dev] Enable texture collecting", ref collect);
                             if (collect)
                             {
@@ -224,6 +218,28 @@ namespace QuestAWAY
                         if (!onlySelected || cfg.HiddenTextures.Contains(e))
                         {
                             ImGui.Checkbox("##" + e, ref b);
+                            ImGui.SameLine();
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 11);
+                            ImGuiDrawImage(e+"_hr1");
+                            if (ImGui.IsItemHovered() && ImGui.GetMouseDragDelta() == Vector2.Zero)
+                            {
+                                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+                                if (Static.MapIconNames[e].Length > 0 || ImGui.GetIO().KeyCtrl)
+                                {
+                                    ImGui.SetTooltip(Static.MapIconNames[e].Length > 0 ? Static.MapIconNames[e] : e);
+                                }
+                                if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Right))
+                                {
+                                    Clipboard.SetText(e);
+                                }
+                                if (ImGui.IsMouseReleased(ImGuiMouseButton.Left))
+                                {
+                                    b = !b;
+                                }
+                            }
+                            
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 11);
+                            ImGui.NextColumn();
                             if (cfg.HiddenTextures.Contains(e) && !b)
                             {
                                 cfg.HiddenTextures.Remove(e);
@@ -232,20 +248,6 @@ namespace QuestAWAY
                             {
                                 cfg.HiddenTextures.Add(e);
                             }
-                            ImGui.SameLine();
-                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 11);
-                            ImGuiDrawImage(e+"_hr1");
-                            if (ImGui.IsItemHovered())
-                            {
-                                ImGui.SetTooltip(e);
-                                if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Right))
-                                {
-                                    Clipboard.SetText(e);
-                                }
-                            }
-                            
-                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 11);
-                            ImGui.NextColumn();
                         }
                     }
                     ImGui.Columns(1);
