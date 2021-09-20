@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31112.23
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31612.314
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuestAWAY", "QuestAWAY\QuestAWAY.csproj", "{493B237C-6D78-4A83-AE28-EC29A2AF02A7}"
 EndProject
@@ -13,8 +13,8 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{493B237C-6D78-4A83-AE28-EC29A2AF02A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{493B237C-6D78-4A83-AE28-EC29A2AF02A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{493B237C-6D78-4A83-AE28-EC29A2AF02A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{493B237C-6D78-4A83-AE28-EC29A2AF02A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{493B237C-6D78-4A83-AE28-EC29A2AF02A7}.Release|Any CPU.ActiveCfg = Release|x64
+		{493B237C-6D78-4A83-AE28-EC29A2AF02A7}.Release|Any CPU.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

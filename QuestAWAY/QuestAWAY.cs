@@ -1,6 +1,7 @@
 ﻿using Dalamud;
 using Dalamud.Game.Internal;
 using Dalamud.Interface;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -16,14 +17,12 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace QuestAWAY
 {
     unsafe class QuestAWAY : IDalamudPlugin
     {
         public string Name => "QuestAWAY";
-        internal DalamudPluginInterface pi;
         bool open = false;
         bool collect = false;
         bool collectDisplay = false;
@@ -48,27 +47,26 @@ namespace QuestAWAY
 
         public void Dispose()
         {
-            pi.Framework.OnUpdateEvent -= Tick;
-            pi.UiBuilder.OnBuildUi -= Draw;
+            Svc.Framework.Update -= Tick;
+            Svc.PluginInterface.UiBuilder.Draw -= Draw;
             cfg.Save();
             foreach(var t in textures.Values)
             {
                 t.Dispose();
             }
-            pi.Dispose();
         }
 
-        public void Initialize(DalamudPluginInterface pluginInterface)
+        public QuestAWAY(DalamudPluginInterface pluginInterface)
         {
-            pi = pluginInterface;
+            pluginInterface.Create<Svc>();
             textures = new Dictionary<string, TextureWrap>();
             cfg = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             cfg.Initialize(this);
             BuildByteSet();
             Static.PaddingVector = ImGui.GetStyle().WindowPadding;
-            pi.Framework.OnUpdateEvent += Tick;
-            pi.UiBuilder.OnBuildUi += Draw;
-            pi.UiBuilder.OnOpenConfigUi += delegate { open = true; };
+            Svc.Framework.Update += Tick;
+            Svc.PluginInterface.UiBuilder.Draw += Draw;
+            Svc.PluginInterface.UiBuilder.OpenConfigUi += delegate { open = true; };
             stopwatch = new Stopwatch();
         }
 
@@ -78,13 +76,13 @@ namespace QuestAWAY
             {
                 if (!textures.ContainsKey(partialPath))
                 {
-                    textures[partialPath] = pi.Data.GetImGuiTexture(partialPath + ".tex");
+                    textures[partialPath] = Svc.Data.GetImGuiTexture(partialPath + ".tex");
                 }
                 ImGui.Image(textures[partialPath].ImGuiHandle, Vector2Scale, Vector2.Zero, Vector2.One, Vector4.One);
             }
             catch (Exception ex)
             {
-                pi.Framework.Gui.Chat.Print("[QuestAWAY error] " + ex.Message + "\n" + ex.StackTrace);
+                Svc.Chat.Print("[QuestAWAY error] " + ex.Message + "\n" + ex.StackTrace);
             }
         }
 
@@ -153,7 +151,7 @@ namespace QuestAWAY
                                         if (!Static.MapIcons.Contains(e)) ImGui.PushStyleColor(ImGuiCol.Button, 0xff0000ff);
                                         if(ImGui.Button("Copy: " + e))
                                         {
-                                            Clipboard.SetText(e);
+                                            ImGui.SetClipboardText(e);
                                         }
                                         if (!Static.MapIcons.Contains(e)) ImGui.PopStyleColor();
                                     }
@@ -230,7 +228,7 @@ namespace QuestAWAY
                                 }
                                 if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Right))
                                 {
-                                    Clipboard.SetText(e);
+                                    ImGui.SetClipboardText(e);
                                 }
                                 if (ImGui.IsMouseReleased(ImGuiMouseButton.Left))
                                 {
@@ -272,7 +270,7 @@ namespace QuestAWAY
                     stopwatch.Restart();
                 }
                 if (reprocess) BuildByteSet();
-                var o = pi.Framework.Gui.GetUiObjectByName("AreaMap", 1);
+                var o = Svc.GameGui.GetAddonByName("AreaMap", 1);
                 if (o != IntPtr.Zero)
                 {
                     var masterWindow = (AtkUnitBase*)o;
@@ -313,7 +311,7 @@ namespace QuestAWAY
             catch (Exception e)
             {
                 PluginLog.Error("=== Error during QuestAway plugin execution ===" + e.Message + "\n" + e.StackTrace);
-                pi.Framework.Gui.Chat.Print("[QuestAway] An error occurred, please send your log to developer.");
+                Svc.Chat.Print("[QuestAway] An error occurred, please send your log to developer.");
             }
         }
 
@@ -330,7 +328,7 @@ namespace QuestAWAY
 
         void ProcessMinimap(bool showAll = false)
         {
-            var o = pi.Framework.Gui.GetUiObjectByName("_NaviMap", 1);
+            var o = Svc.GameGui.GetAddonByName("_NaviMap", 1);
             if (o != IntPtr.Zero)
             {
                 var masterWindow = (AtkUnitBase*)o;
@@ -353,8 +351,8 @@ namespace QuestAWAY
             var textureInfo = imageNode->PartsList->Parts[imageNode->PartId].UldAsset;
             if (textureInfo->AtkTexture.TextureType == TextureType.Resource)
             {
-                if (collect) texSet.Add(Marshal.PtrToStringAnsi((IntPtr)textureInfo->AtkTexture.Resource->TexFileResourceHandle->ResourceHandle.FileName).Replace(".tex", "").Replace("_hr1", ""));
-                var fNamePtr = (byte*)textureInfo->AtkTexture.Resource->TexFileResourceHandle->ResourceHandle.FileName;
+                if (collect) texSet.Add(Marshal.PtrToStringAnsi((IntPtr)textureInfo->AtkTexture.Resource->TexFileResourceHandle->ResourceHandle.FileName.BufferPtr).Replace(".tex", "").Replace("_hr1", ""));
+                var fNamePtr = textureInfo->AtkTexture.Resource->TexFileResourceHandle->ResourceHandle.FileName.BufferPtr;
                 if (!showUnconditionally)
                 {
                     if (

@@ -32,7 +32,7 @@ namespace QuestAWAY
 
         public void Save()
         {
-            p.pi.SavePluginConfig(this);
+            Svc.PluginInterface.SavePluginConfig(this);
         }
     }
 }
