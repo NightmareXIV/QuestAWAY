@@ -50,7 +50,10 @@ namespace QuestAWAY
             Svc.Framework.Update -= Tick;
             Svc.PluginInterface.UiBuilder.Draw -= Draw;
             cfg.Save();
-            foreach(var t in textures.Values)
+            cfg.Enabled = false;
+            reprocess = true;
+            Tick(null);
+            foreach (var t in textures.Values)
             {
                 t.Dispose();
             }
