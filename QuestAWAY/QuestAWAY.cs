@@ -1,4 +1,5 @@
 ﻿using Dalamud;
+using Dalamud.Game.Command;
 using Dalamud.Game.Internal;
 using Dalamud.Interface;
 using Dalamud.Logging;
@@ -51,6 +52,7 @@ namespace QuestAWAY
             Svc.PluginInterface.UiBuilder.Draw -= Draw;
             cfg.Save();
             cfg.Enabled = false;
+            Svc.Commands.RemoveHandler("/questaway");
             reprocess = true;
             Tick(null);
             foreach (var t in textures.Values)
@@ -71,6 +73,13 @@ namespace QuestAWAY
             Svc.PluginInterface.UiBuilder.Draw += Draw;
             Svc.PluginInterface.UiBuilder.OpenConfigUi += delegate { open = true; };
             stopwatch = new Stopwatch();
+            Svc.Commands.AddHandler("/questaway", new CommandInfo(delegate
+            {
+                open = !open;
+            })
+            {
+                HelpMessage = "open/close configuration"
+            });
         }
 
         void ImGuiDrawImage(string partialPath)
