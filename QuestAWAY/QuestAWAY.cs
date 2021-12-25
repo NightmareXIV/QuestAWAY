@@ -359,7 +359,19 @@ namespace QuestAWAY
         {
             if (!mapIconNode->AtkResNode.IsVisible) return;
             if (mapIconNode->Component->UldManager.NodeListCount <= 4) return;
-            var imageNode = (AtkImageNode*)mapIconNode->Component->UldManager.NodeList[4];
+            AtkImageNode* imageNode;
+            if (mapIconNode->Component->UldManager.NodeList[4]->Type == NodeType.Image)
+            {
+                imageNode = (AtkImageNode*)mapIconNode->Component->UldManager.NodeList[4];
+            }
+            else if(mapIconNode->Component->UldManager.NodeList[3]->Type == NodeType.Image)
+            {
+                imageNode = (AtkImageNode*)mapIconNode->Component->UldManager.NodeList[3];
+            }
+            else
+            {
+                return;
+            }
             var textureInfo = imageNode->PartsList->Parts[imageNode->PartId].UldAsset;
             if (textureInfo->AtkTexture.TextureType == TextureType.Resource)
             {
