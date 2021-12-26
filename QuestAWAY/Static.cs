@@ -226,6 +226,10 @@ namespace QuestAWAY
                 { "ui/icon/071000/071152", "Unavailable repeatable key quest" },
                 { "ui/icon/071000/071153", "Unavailable key quest in progress" },
                 { "ui/icon/071000/071155", "Unavailable completed key quest" },
+                { "ui/icon/063000/063934", "Unavailable studium delivery" },
+                { "ui/icon/063000/063932", "Studium delivery" },
+                { "ui/icon/060000/060441", "Adjoining area marker" },
+                { "ui/icon/060000/060091", "Gemstone trader" },
         };
 
         public static SortedSet<string> MapIcons = new SortedSet<string>(MapIconNames.Keys);
