@@ -49,8 +49,8 @@ namespace QuestAWAY
 
         PluginAddressResolver addressResolver = new PluginAddressResolver();
         private readonly Hook<MapAreaSetVisibilityAndRotationDelegate> MapAreaSetVisibilityAndRotationHook;
-        private readonly Hook<ClientUIAddonAreaMapOnUpdateDelegate> ClientUIAddonAreaMapOnUpdateHook;
-        private readonly Hook<ClientUIAddonAreaMapOnRefreshDelegate> ClientUIAddonAreaMapOnRefreshHook;
+        private readonly Hook<ClientUiAddonAreaMapOnUpdateDelegate> ClientUiAddonAreaMapOnUpdateHook;
+        private readonly Hook<ClientUiAddonAreaMapOnRefreshDelegate> ClientUiAddonAreaMapOnRefreshHook;
         private readonly Hook<AddonNaviMapOnUpdateDelegate> AddonNaviMapOnUpdateHook;
 
         public void Dispose()
@@ -58,8 +58,8 @@ namespace QuestAWAY
             Svc.Framework.Update -= Tick;
             Svc.PluginInterface.UiBuilder.Draw -= Draw;
             MapAreaSetVisibilityAndRotationHook.Dispose();
-            ClientUIAddonAreaMapOnUpdateHook.Dispose();
-            ClientUIAddonAreaMapOnRefreshHook.Dispose();
+            ClientUiAddonAreaMapOnUpdateHook.Dispose();
+            ClientUiAddonAreaMapOnRefreshHook.Dispose();
             AddonNaviMapOnUpdateHook.Dispose();
             cfg.Save();
             cfg.Enabled = false;
@@ -80,15 +80,21 @@ namespace QuestAWAY
             cfg.Initialize(this);
             BuildByteSet();
             Static.PaddingVector = ImGui.GetStyle().WindowPadding;
-            
+
+            // hook setup
             addressResolver.Setup();
-            this.ClientUIAddonAreaMapOnUpdateHook = new Hook<ClientUIAddonAreaMapOnUpdateDelegate>(addressResolver.ClientUiAddonAreaMapOnUpdateAddress, this.ClientUIAddonAreaMapOnUpdateDetour);
-            this.ClientUIAddonAreaMapOnUpdateHook.Enable();
-            this.ClientUIAddonAreaMapOnRefreshHook = new Hook<ClientUIAddonAreaMapOnRefreshDelegate>(addressResolver.ClientUiAddonAreaMapOnRefreshAddress, this.ClientUIAddonAreaMapOnRefreshDetour);
-            this.ClientUIAddonAreaMapOnRefreshHook.Enable();
-            this.MapAreaSetVisibilityAndRotationHook = new Hook<MapAreaSetVisibilityAndRotationDelegate>(addressResolver.MapAreaSetVisibilityAndRotationAddress, this.MapAreaSetVisibilityAndRotationDetour);
+            ClientUiAddonAreaMapOnUpdateHook = new Hook<ClientUiAddonAreaMapOnUpdateDelegate>(
+                addressResolver.ClientUiAddonAreaMapOnUpdateAddress, ClientUiAddonAreaMapOnUpdateDetour);
+            ClientUiAddonAreaMapOnRefreshHook = new Hook<ClientUiAddonAreaMapOnRefreshDelegate>(
+                addressResolver.ClientUiAddonAreaMapOnRefreshAddress, ClientUiAddonAreaMapOnRefreshDetour);
+            MapAreaSetVisibilityAndRotationHook = new Hook<MapAreaSetVisibilityAndRotationDelegate>(
+                addressResolver.MapAreaSetVisibilityAndRotationAddress, MapAreaSetVisibilityAndRotationDetour);
+            AddonNaviMapOnUpdateHook =
+                new Hook<AddonNaviMapOnUpdateDelegate>(addressResolver.AddonNaviMapOnUpdateAddress,
+                    AddonNaviMapOnUpdateDetour);
+            ClientUiAddonAreaMapOnUpdateHook.Enable();
+            ClientUiAddonAreaMapOnRefreshHook.Enable();
             MapAreaSetVisibilityAndRotationHook.Disable();
-            this.AddonNaviMapOnUpdateHook = new Hook<AddonNaviMapOnUpdateDelegate>(addressResolver.AddonNaviMapOnUpdateAddress, this.AddonNaviMapOnUpdateDetour);
             AddonNaviMapOnUpdateHook.Enable();
 
             Svc.Framework.Update += Tick;
@@ -104,55 +110,57 @@ namespace QuestAWAY
             });
         }
 
-        private delegate void* AddonNaviMapOnUpdateDelegate(void* a1, void* a2, void* a3);
+        private delegate IntPtr AddonNaviMapOnUpdateDelegate(IntPtr unk1, IntPtr unk2, IntPtr unk3);
 
-        private void* AddonNaviMapOnUpdateDetour(void* a1, void* a2, void* a3)
+        private IntPtr AddonNaviMapOnUpdateDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
         {
-            var result = AddonNaviMapOnUpdateHook.Original(a1,a2,a3);
+            // after the minimap updates its components, process them in order to hide the ones we dont want to see
+            var result = AddonNaviMapOnUpdateHook.Original(unk1, unk2, unk3);
+            ProfilingContinue();
             ProcessMinimap(!(cfg.Enabled && cfg.Minimap));
+            ProfilingPause();
             return result;
         }
 
-        private delegate void* ClientUIAddonAreaMapOnRefreshDelegate(void* a1, void* a2, void* a3);
+        private delegate IntPtr ClientUiAddonAreaMapOnRefreshDelegate(IntPtr unk1, IntPtr unk2, IntPtr unk3);
 
-        private void* ClientUIAddonAreaMapOnRefreshDetour(void* a1, void* a2, void* a3)
+        private IntPtr ClientUiAddonAreaMapOnRefreshDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
         {
-            var result = ClientUIAddonAreaMapOnRefreshHook.Original(a1,a2,a3);
+            // when the map is opened or changes zones, indicate that there should be a full hide/show of icons on the map
+            // this is because not all icons on the map are reset in AddonAreaMapOnUpdate
+            var result = ClientUiAddonAreaMapOnRefreshHook.Original(unk1, unk2, unk3);
             reprocess = true;
             return result;
         }
 
-        private delegate void* ClientUIAddonAreaMapOnUpdateDelegate(void* a1, void* a2, void* a3);
+        private delegate IntPtr ClientUiAddonAreaMapOnUpdateDelegate(IntPtr unk1, IntPtr unk2, IntPtr unk3);
 
-        private void* ClientUIAddonAreaMapOnUpdateDetour(void* a1, void* a2, void* a3)
+        private IntPtr ClientUiAddonAreaMapOnUpdateDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
         {
+            // enable/disable processing for icons, to avoid processing errors or process too many things
             MapAreaSetVisibilityAndRotationHook.Enable();
-            var result = ClientUIAddonAreaMapOnUpdateHook.Original(a1,a2,a3);
+            var result = ClientUiAddonAreaMapOnUpdateHook.Original(unk1, unk2, unk3);
             MapAreaSetVisibilityAndRotationHook.Disable();
             return result;
         }
 
-        private delegate void* MapAreaSetVisibilityAndRotationDelegate(void* pointerToSomeMapThing, void* a2, void* a3, void* a4, void* a5, void* a6, void* a7, void* a8, void* a9);
+        private delegate IntPtr MapAreaSetVisibilityAndRotationDelegate(Atk2DAreaMap** atk2DAreaMap, IntPtr unk2,
+            IntPtr unk3, IntPtr unk4, IntPtr unk5, IntPtr unk6, IntPtr unk7, IntPtr unk8, IntPtr unk9);
 
-        private void* MapAreaSetVisibilityAndRotationDetour(void* pointerToSomeMapThing, void* a2, void* a3, void* a4, void* a5, void* a6, void* a7, void* a8, void* a9)
+        private IntPtr MapAreaSetVisibilityAndRotationDetour(Atk2DAreaMap** atk2DAreaMap, IntPtr unk2, IntPtr unk3,
+            IntPtr unk4, IntPtr unk5, IntPtr unk6, IntPtr unk7, IntPtr unk8, IntPtr unk9)
         {
-            var result = MapAreaSetVisibilityAndRotationHook.Original(pointerToSomeMapThing,a2,a3,a4,a5,a6,a7,a8,a9);
-            //PluginLog.Debug($"pointerToMapThing: {(UInt64)pointerToSomeMapThing:X}");
-            if (pointerToSomeMapThing != null)
+            var result =
+                MapAreaSetVisibilityAndRotationHook.Original(atk2DAreaMap, unk2, unk3, unk4, unk5, unk6, unk7, unk8,
+                    unk9);
+
+            if (atk2DAreaMap != null && *atk2DAreaMap != null && (*atk2DAreaMap)->AtkComponentNode != null)
             {
-                var AtkComponentNodePtr = (AtkComponentNode**)(*(byte**)pointerToSomeMapThing + 0x70);
-                //PluginLog.Debug($"mapThing: {(UInt64)AtkComponentNodePtr:X}");
-                if (AtkComponentNodePtr != null)
-                {
-                    var node = *AtkComponentNodePtr;
-                    if (node != null)
-                    {
-                        //PluginLog.Debug($"node: {(UInt64)(*(byte**)node):X}");
-                        //node->AtkResNode.ToggleVisibility(false);
-                        ProcessShit(node, !(cfg.Enabled && cfg.Bigmap), true);
-                    }
-                }
+                ProfilingContinue();
+                ProcessShit((*atk2DAreaMap)->AtkComponentNode, !(cfg.Enabled && cfg.Bigmap), true);
+                ProfilingPause();
             }
+
             return result;
         }
 
@@ -345,19 +353,35 @@ namespace QuestAWAY
             }
         }
 
+        private void ProfilingContinue()
+        {
+            if (!profiling) return;
+            stopwatch.Start();
+        }
+
+        private void ProfilingPause()
+        {
+            if (!profiling) return;
+            stopwatch.Stop();
+        }
+
+        private void ProfilingRestart()
+        {
+            if (!profiling) return;
+            
+            totalTime += stopwatch.ElapsedTicks+1;
+            totalTicks++;
+            stopwatch.Restart();
+        }
+
         [HandleProcessCorruptedStateExceptions]
         public void Tick(object _)
         {
             try
             {
-                if (profiling)
-                {
-                    totalTicks++;
-                    stopwatch.Restart();
-                }
+                ProfilingRestart();
                 if (reprocess) BuildByteSet();
                 var o = Svc.GameGui.GetAddonByName("AreaMap", 1);
-                //PluginLog.Debug($"...: {setupCount} {reprocess} {firstUpdateFrame}");
                 if (o != IntPtr.Zero)
                 {
                     var masterWindow = (AtkUnitBase*)o;
@@ -385,11 +409,7 @@ namespace QuestAWAY
                     openQuickEnable = false;
                 }
                 reprocess = false;
-                if (profiling)
-                {
-                    stopwatch.Stop();
-                    totalTime += stopwatch.ElapsedTicks;
-                }
+                ProfilingPause();
             }
             catch (Exception e)
             {
@@ -402,7 +422,6 @@ namespace QuestAWAY
         {
             if (masterWindow->IsVisible)
             {
-                PluginLog.Debug($"Reprocessing: {reprocess}");
                 for (var i = 6; i < mapCNode->Component->UldManager.NodeListCount; i++)
                 {
                     ProcessShit((AtkComponentNode*)mapCNode->Component->UldManager.NodeList[i], showAll, true);
@@ -422,8 +441,7 @@ namespace QuestAWAY
                     for (var i = 4; i < mapCNode->Component->UldManager.NodeListCount; i++)
                     {
                         AtkComponentNode* mapIconNode = (AtkComponentNode*)mapCNode->Component->UldManager.NodeList[i];
-                        if (!mapIconNode->AtkResNode.IsVisible)
-                            continue;
+                        if (!mapIconNode->AtkResNode.IsVisible) continue;
                         ProcessShit(mapIconNode, showAll);
                     }
                 }
@@ -432,7 +450,6 @@ namespace QuestAWAY
 
         void ProcessShit(AtkComponentNode* mapIconNode, bool showUnconditionally = false, bool isMap = false)
         {
-            //if (!mapIconNode->AtkResNode.IsVisible) return;
             if (mapIconNode->Component->UldManager.NodeListCount <= 4) return;
             AtkImageNode* imageNode;
             if (mapIconNode->Component->UldManager.NodeList[4]->Type == NodeType.Image)
@@ -461,12 +478,10 @@ namespace QuestAWAY
                         && imageNode->AtkResNode.AddBlue == 100 && imageNode->AtkResNode.MultiplyRed == 50)
                         )
                     {
-                        //if (mapIconNode->AtkResNode.Color.A != 0) mapIconNode->AtkResNode.Color.A = 0;
                         mapIconNode->AtkResNode.ToggleVisibility(false);
                     }
                     else
                     {
-                        //if (mapIconNode->AtkResNode.Color.A == 0) mapIconNode->AtkResNode.Color.A = 0xff;
                         mapIconNode->AtkResNode.ToggleVisibility(true);
                     }
 
@@ -475,21 +490,17 @@ namespace QuestAWAY
                         if (cfg.HideAreaMarkers)
                         {
                             if (imageNode->AtkResNode.Color.A != 0) imageNode->AtkResNode.Color.A = 0;
-                            //imageNode->AtkResNode.ToggleVisibility(false);
                         }
                         else
                         {
                             if (imageNode->AtkResNode.Color.A == 0) imageNode->AtkResNode.Color.A = 0xff;
-                            //imageNode->AtkResNode.ToggleVisibility(true);
                         }
                     }
                 }
                 else
                 {
-                    //if (mapIconNode->AtkResNode.Color.A == 0) mapIconNode->AtkResNode.Color.A = 0xff;
                     mapIconNode->AtkResNode.ToggleVisibility(true);
                     if (StartsWith(fNamePtr, areaMarkerTexture) && imageNode->AtkResNode.Color.A == 0) imageNode->AtkResNode.Color.A = 0xff;
-                    //if (StartsWith(fNamePtr, areaMarkerTexture) && !imageNode->AtkResNode.IsVisible) imageNode->AtkResNode.ToggleVisibility(true);
                 }
             }
         }
