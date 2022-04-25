@@ -127,7 +127,7 @@ namespace QuestAWAY
         private IntPtr ClientUiAddonAreaMapOnRefreshDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
         {
             // when the map is opened or changes zones, indicate that there should be a full hide/show of icons on the map
-            // this is because not all icons on the map are reset in AddonAreaMapOnUpdate
+            // this is because not all icons on the map are reset in AddonAreaMapOnUpdate.
             var result = ClientUiAddonAreaMapOnRefreshHook.Original(unk1, unk2, unk3);
             reprocess = true;
             return result;
@@ -137,7 +137,7 @@ namespace QuestAWAY
 
         private IntPtr ClientUiAddonAreaMapOnUpdateDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
         {
-            // enable/disable processing for icons, to avoid processing errors or process too many things
+            // enable/disable processing for areamap icons, to avoid processing errors or process too many things
             MapAreaSetVisibilityAndRotationHook.Enable();
             var result = ClientUiAddonAreaMapOnUpdateHook.Original(unk1, unk2, unk3);
             MapAreaSetVisibilityAndRotationHook.Disable();
@@ -150,6 +150,7 @@ namespace QuestAWAY
         private IntPtr MapAreaSetVisibilityAndRotationDetour(Atk2DAreaMap** atk2DAreaMap, IntPtr unk2, IntPtr unk3,
             IntPtr unk4, IntPtr unk5, IntPtr unk6, IntPtr unk7, IntPtr unk8, IntPtr unk9)
         {
+            // after the game sets an item visible, check if we want to hide it
             var result =
                 MapAreaSetVisibilityAndRotationHook.Original(atk2DAreaMap, unk2, unk3, unk4, unk5, unk6, unk7, unk8,
                     unk9);
