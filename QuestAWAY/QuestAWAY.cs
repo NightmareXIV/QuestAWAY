@@ -52,6 +52,8 @@ namespace QuestAWAY
         private readonly Hook<ClientUiAddonAreaMapOnUpdateDelegate> ClientUiAddonAreaMapOnUpdateHook;
         private readonly Hook<ClientUiAddonAreaMapOnRefreshDelegate> ClientUiAddonAreaMapOnRefreshHook;
         private readonly Hook<AddonNaviMapOnUpdateDelegate> AddonNaviMapOnUpdateHook;
+        private readonly Hook<NaviMapOnMouseMoveDelegate> NaviMapOnMouseMoveHook;
+        private readonly Hook<CheckAtkCollisionNodeIntersectDelegate> CheckAtkCollisionNodeIntersectHook;
 
         public void Dispose()
         {
@@ -61,6 +63,8 @@ namespace QuestAWAY
             ClientUiAddonAreaMapOnUpdateHook.Dispose();
             ClientUiAddonAreaMapOnRefreshHook.Dispose();
             AddonNaviMapOnUpdateHook.Dispose();
+            NaviMapOnMouseMoveHook.Dispose();
+            CheckAtkCollisionNodeIntersectHook.Dispose();
             cfg.Save();
             cfg.Enabled = false;
             Svc.Commands.RemoveHandler("/questaway");
@@ -92,9 +96,18 @@ namespace QuestAWAY
             AddonNaviMapOnUpdateHook =
                 new Hook<AddonNaviMapOnUpdateDelegate>(addressResolver.AddonNaviMapOnUpdateAddress,
                     AddonNaviMapOnUpdateDetour);
+            NaviMapOnMouseMoveHook = 
+                new Hook<NaviMapOnMouseMoveDelegate>(addressResolver.NaviMapOnMouseMoveAddress,
+                    NaviMapOnMouseMoveDetour);
+            CheckAtkCollisionNodeIntersectHook = 
+                new Hook<CheckAtkCollisionNodeIntersectDelegate>(addressResolver.CheckAtkCollisionNodeIntersectAddress,
+                    CheckAtkCollisionNodeIntersectDetour);
             ClientUiAddonAreaMapOnUpdateHook.Enable();
             ClientUiAddonAreaMapOnRefreshHook.Enable();
             MapAreaSetVisibilityAndRotationHook.Disable();
+            NaviMapOnMouseMoveHook.Enable();
+            CheckAtkCollisionNodeIntersectHook.Disable();
+            
             AddonNaviMapOnUpdateHook.Enable();
 
             Svc.Framework.Update += Tick;
@@ -110,6 +123,46 @@ namespace QuestAWAY
             });
         }
 
+        
+        
+        private delegate byte CheckAtkCollisionNodeIntersectDelegate(AtkNineGridNode* node, void* a2, void* a3, void* a4);
+
+        private byte CheckAtkCollisionNodeIntersectDetour(AtkNineGridNode* node, void* a2, void* a3, void* a4)
+        {
+            if (node != null && node->AtkResNode.ParentNode != null)
+            {
+                return node->AtkResNode.ParentNode->IsVisible
+                    ? CheckAtkCollisionNodeIntersectHook.Original(node, a2, a3, a4)
+                    : (byte)0;
+                //node->AtkResNode.ToggleVisibility(false);
+                //PluginLog.Debug($"{}");
+                /*
+                var componentNode = node->GetAsAtkComponentNode();
+                if (componentNode != null)
+                {
+                    //ProcessShit(componentNode, !(cfg.Enabled && cfg.Bigmap), true);
+                    componentNode->AtkResNode.ToggleVisibility(false);
+                    PluginLog.Debug($"{(long)componentNode:X}.visible = false");
+                }
+                */
+            }
+            else
+            {
+                return CheckAtkCollisionNodeIntersectHook.Original(node, a2, a3, a4);
+            }
+        }
+        
+        private delegate IntPtr NaviMapOnMouseMoveDelegate(IntPtr unk1, IntPtr unk2, IntPtr unk3);
+
+        private IntPtr NaviMapOnMouseMoveDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
+        {
+            // enable/disable processing for mouseovered minimap icons, hooking "IsVisible" would be very bad otherwise
+            CheckAtkCollisionNodeIntersectHook.Enable();
+            var result = NaviMapOnMouseMoveHook.Original(unk1, unk2, unk3);
+            CheckAtkCollisionNodeIntersectHook.Disable();
+            return result;
+        }
+        
         private delegate IntPtr AddonNaviMapOnUpdateDelegate(IntPtr unk1, IntPtr unk2, IntPtr unk3);
 
         private IntPtr AddonNaviMapOnUpdateDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
@@ -155,10 +208,12 @@ namespace QuestAWAY
                 MapAreaSetVisibilityAndRotationHook.Original(atk2DAreaMap, unk2, unk3, unk4, unk5, unk6, unk7, unk8,
                     unk9);
 
-            if (atk2DAreaMap != null && *atk2DAreaMap != null && (*atk2DAreaMap)->AtkComponentNode != null)
+            // the game already shows what needs to be visible, so we should only try to hide stuff
+            if (cfg.Enabled && cfg.Bigmap && atk2DAreaMap != null && *atk2DAreaMap != null &&
+                (*atk2DAreaMap)->AtkComponentNode != null && (*atk2DAreaMap)->AtkComponentNode->AtkResNode.IsVisible)
             {
                 ProfilingContinue();
-                ProcessShit((*atk2DAreaMap)->AtkComponentNode, !(cfg.Enabled && cfg.Bigmap), true);
+                ProcessShit((*atk2DAreaMap)->AtkComponentNode, false, true);
                 ProfilingPause();
             }
 
