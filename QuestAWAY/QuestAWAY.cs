@@ -39,7 +39,8 @@ namespace QuestAWAY
         private bool openQuickEnable = false;
         private byte[][] cfgHideSet = { };
         private byte[][] cfgShowSet = { };
-        private bool reprocess = true;
+        private volatile bool reprocess = true;
+        private volatile ushort reprocessDelay = 0;
         long tick = 0;
         bool profiling = false;
         long totalTime;
@@ -109,7 +110,6 @@ namespace QuestAWAY
             MapAreaSetVisibilityAndRotationHook.Disable();
             NaviMapOnMouseMoveHook.Enable();
             CheckAtkCollisionNodeIntersectHook.Disable();
-            
             AddonNaviMapOnUpdateHook.Enable();
 
             Svc.Framework.Update += Tick;
@@ -166,10 +166,11 @@ namespace QuestAWAY
 
         private IntPtr ClientUiAddonAreaMapOnRefreshDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
         {
-            // when the map is opened or changes zones, indicate that there should be a full hide/show of icons on the map
-            // this is because not all icons on the map are reset in AddonAreaMapOnUpdate.
             var result = ClientUiAddonAreaMapOnRefreshHook.Original(unk1, unk2, unk3);
-            reprocess = true;
+
+            // after a refresh (opened map or changed zones) block reprocessing icons until the 2nd OnUpdate runs
+            reprocessDelay = 3;
+
             return result;
         }
 
@@ -181,6 +182,14 @@ namespace QuestAWAY
             MapAreaSetVisibilityAndRotationHook.Enable();
             var result = ClientUiAddonAreaMapOnUpdateHook.Original(unk1, unk2, unk3);
             MapAreaSetVisibilityAndRotationHook.Disable();
+
+            // when the new map is fully loaded after being opened or changing zones, indicate that there should be a
+            // full hide/show of icons on the map.
+            // this is because not all icons on the map are reset in AddonAreaMapOnUpdate.
+            // and because it takes 1 frame to update all the icons so we wait for that too using reprocessLock
+            if (reprocessDelay > 0) reprocessDelay--;
+            if (reprocessDelay == 1) reprocess = true;
+
             return result;
         }
 
@@ -442,7 +451,7 @@ namespace QuestAWAY
                             quickMenuPos.X = masterWindow->X + mapCNode->AtkResNode.X * masterWindow->Scale + mapCNode->AtkResNode.Width * masterWindow->Scale / 2 - quickMenuSize.X / 2;
                             quickMenuPos.Y = masterWindow->Y + mapCNode->AtkResNode.Y * masterWindow->Scale - quickMenuSize.Y;
                         }
-                        if (reprocess)
+                        if (reprocessDelay <= 1 && reprocess)
                         {
                             ProcessMap(!(cfg.Enabled && cfg.Bigmap), masterWindow, mapCNode);
                         }
