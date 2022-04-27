@@ -1,7 +1,12 @@
 ﻿{
-  "Name": "QuestAWAY",
   "Author": "Eternita",
-  "Punchline": "Removes unwanted icons from your map.",
+  "Name": "QuestAWAY",
+  "InternalName": "QuestAWAY",
+  "AssemblyVersion": "9.0.0.0",
   "Description": "Removes unwanted icons from your map. Not only quests, any icons.",
-  "RepoUrl": "https://github.com/Eternita-S/QuestAWAY"
+  "ApplicableVersion": "any",
+  "RepoUrl": "https://github.com/Eternita-S/QuestAWAY",
+  "DalamudApiLevel": 6,
+  "LoadPriority": 0,
+  "Punchline": "Removes unwanted icons from your map."
 }
