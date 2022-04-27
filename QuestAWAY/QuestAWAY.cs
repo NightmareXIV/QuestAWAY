@@ -37,7 +37,8 @@ namespace QuestAWAY
         static Vector2 Vector2Scale = new Vector2(48f, 48f);
         private bool onlySelected = false;
         private bool openQuickEnable = false;
-        byte[][] cfgHideSet = { };
+        private byte[][] cfgHideSet = { };
+        private byte[][] cfgShowSet = { };
         private bool reprocess = true;
         long tick = 0;
         bool profiling = false;
@@ -82,7 +83,8 @@ namespace QuestAWAY
             textures = new Dictionary<string, TextureWrap>();
             cfg = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             cfg.Initialize(this);
-            BuildByteSet();
+            BuildHiddenByteSet();
+            UpdateShownByteSet();
             Static.PaddingVector = ImGui.GetStyle().WindowPadding;
 
             // hook setup
@@ -123,40 +125,25 @@ namespace QuestAWAY
             });
         }
 
-        
-        
         private delegate byte CheckAtkCollisionNodeIntersectDelegate(AtkNineGridNode* node, void* a2, void* a3, void* a4);
 
         private byte CheckAtkCollisionNodeIntersectDetour(AtkNineGridNode* node, void* a2, void* a3, void* a4)
         {
             if (node != null && node->AtkResNode.ParentNode != null)
             {
+                // make intersection check fail if the map icon is not visible
                 return node->AtkResNode.ParentNode->IsVisible
                     ? CheckAtkCollisionNodeIntersectHook.Original(node, a2, a3, a4)
                     : (byte)0;
-                //node->AtkResNode.ToggleVisibility(false);
-                //PluginLog.Debug($"{}");
-                /*
-                var componentNode = node->GetAsAtkComponentNode();
-                if (componentNode != null)
-                {
-                    //ProcessShit(componentNode, !(cfg.Enabled && cfg.Bigmap), true);
-                    componentNode->AtkResNode.ToggleVisibility(false);
-                    PluginLog.Debug($"{(long)componentNode:X}.visible = false");
-                }
-                */
             }
-            else
-            {
-                return CheckAtkCollisionNodeIntersectHook.Original(node, a2, a3, a4);
-            }
+            return CheckAtkCollisionNodeIntersectHook.Original(node, a2, a3, a4);
         }
         
         private delegate IntPtr NaviMapOnMouseMoveDelegate(IntPtr unk1, IntPtr unk2, IntPtr unk3);
 
         private IntPtr NaviMapOnMouseMoveDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
         {
-            // enable/disable processing for mouseovered minimap icons, hooking "IsVisible" would be very bad otherwise
+            // optimization: only hook CheckAtkCollisionNodeIntersect when mouseovering the minimap
             CheckAtkCollisionNodeIntersectHook.Enable();
             var result = NaviMapOnMouseMoveHook.Original(unk1, unk2, unk3);
             CheckAtkCollisionNodeIntersectHook.Disable();
@@ -190,7 +177,7 @@ namespace QuestAWAY
 
         private IntPtr ClientUiAddonAreaMapOnUpdateDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
         {
-            // enable/disable processing for areamap icons, to avoid processing errors or process too many things
+            // Optimization: only hook processing of areamap icons when the area map is updating
             MapAreaSetVisibilityAndRotationHook.Enable();
             var result = ClientUiAddonAreaMapOnUpdateHook.Original(unk1, unk2, unk3);
             MapAreaSetVisibilityAndRotationHook.Disable();
@@ -314,6 +301,7 @@ namespace QuestAWAY
                             if (ImGui.Button("Clear hidden textures list" + (ImGui.GetIO().KeyCtrl ? "" : " (hold ctrl and click)")) && ImGui.GetIO().KeyCtrl)
                             {
                                 cfg.HiddenTextures.Clear();
+                                UpdateShownByteSet();
                             }
                             ImGui.Checkbox("Profiling", ref profiling);
                             if (profiling)
@@ -344,10 +332,12 @@ namespace QuestAWAY
                         if (ImGui.Selectable("All"))
                         {
                             cfg.HiddenTextures.UnionWith(Static.MapIcons);
+                            UpdateShownByteSet();
                         }
                         if (ImGui.Selectable("None"))
                         {
                             cfg.HiddenTextures.Clear();
+                            UpdateShownByteSet();
                         }
                         ImGui.EndCombo();
                     }
@@ -391,10 +381,12 @@ namespace QuestAWAY
                             if (cfg.HiddenTextures.Contains(e) && !b)
                             {
                                 cfg.HiddenTextures.Remove(e);
+                                UpdateShownByteSet();
                             }
                             if (!cfg.HiddenTextures.Contains(e) && b)
                             {
                                 cfg.HiddenTextures.Add(e);
+                                UpdateShownByteSet();
                             }
                         }
                     }
@@ -436,7 +428,7 @@ namespace QuestAWAY
             try
             {
                 ProfilingRestart();
-                if (reprocess) BuildByteSet();
+                if (reprocess) BuildHiddenByteSet();
                 var o = Svc.GameGui.GetAddonByName("AreaMap", 1);
                 if (o != IntPtr.Zero)
                 {
@@ -529,14 +521,25 @@ namespace QuestAWAY
                 {
                     if (
                         StartsWithAny(fNamePtr, cfgHideSet)
-                        ||
-                        (cfg.HideFateCircles && StartsWithAny(fNamePtr, fateTexture)
-                        && imageNode->AtkResNode.AddBlue == 100 && imageNode->AtkResNode.MultiplyRed == 50)
+                        || (
+                            cfg.HideFateCircles
+                            && StartsWithAny(fNamePtr, fateTexture)
+                            && imageNode->AtkResNode.AddBlue == 100
+                            && imageNode->AtkResNode.MultiplyRed == 50
                         )
+                    )
                     {
                         mapIconNode->AtkResNode.ToggleVisibility(false);
                     }
-                    else
+                    else if (
+                        StartsWithAny(fNamePtr, cfgShowSet)
+                        || (
+                            !cfg.HideFateCircles
+                            && StartsWithAny(fNamePtr, fateTexture)
+                            && imageNode->AtkResNode.AddBlue == 100
+                            && imageNode->AtkResNode.MultiplyRed == 50
+                        )
+                    )
                     {
                         mapIconNode->AtkResNode.ToggleVisibility(true);
                     }
@@ -555,8 +558,10 @@ namespace QuestAWAY
                 }
                 else
                 {
-                    mapIconNode->AtkResNode.ToggleVisibility(true);
-                    if (StartsWith(fNamePtr, areaMarkerTexture) && imageNode->AtkResNode.Color.A == 0) imageNode->AtkResNode.Color.A = 0xff;
+                    if (StartsWithAny(fNamePtr, cfgHideSet) && !mapIconNode->AtkResNode.IsVisible)
+                        mapIconNode->AtkResNode.ToggleVisibility(true);
+                    if (StartsWith(fNamePtr, areaMarkerTexture) && imageNode->AtkResNode.Color.A == 0)
+                        imageNode->AtkResNode.Color.A = 0xff;
                 }
             }
         }
@@ -580,7 +585,7 @@ namespace QuestAWAY
             return false;
         }
 
-        void BuildByteSet()
+        void BuildHiddenByteSet()
         {
             fateTexture = new byte[][] { Encoding.ASCII.GetBytes("ui/icon/060000/060496"), Encoding.ASCII.GetBytes("ui/icon/060000/060495") };
             areaMarkerTexture = Encoding.ASCII.GetBytes("ui/icon/060000/060442");
@@ -592,11 +597,24 @@ namespace QuestAWAY
             var userLinesSet = userLines.ToHashSet();
             userLinesSet.RemoveWhere((string line) => { return line.Length == 0; });
             userLinesSet.UnionWith(cfg.HiddenTextures);
+            
             cfgHideSet = new byte[userLinesSet.Count][];
             var i = 0;
             foreach(var e in userLinesSet)
             {
                 cfgHideSet[i++] = Encoding.ASCII.GetBytes(e);
+            }
+        }
+
+        void UpdateShownByteSet()
+        {
+            var shownTextures = new SortedSet<string>(Static.MapIcons); // - cfg.HiddenTextures.);
+            shownTextures.RemoveWhere(s => cfg.HiddenTextures.Contains(s));
+            cfgShowSet = new byte[shownTextures.Count][];
+            var i = 0;
+            foreach(var e in shownTextures)
+            {
+                cfgShowSet[i++] = Encoding.ASCII.GetBytes(e);
             }
         }
     }
