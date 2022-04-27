@@ -18,6 +18,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Dalamud.Hooking;
 
 namespace QuestAWAY
 {
@@ -36,8 +37,9 @@ namespace QuestAWAY
         static Vector2 Vector2Scale = new Vector2(48f, 48f);
         private bool onlySelected = false;
         private bool openQuickEnable = false;
-        byte[][] cfgHideSet = { };
-        bool reprocess = false;
+        private byte[][] cfgHideSet = { };
+        private byte[][] cfgShowSet = { };
+        private bool reprocess = true;
         long tick = 0;
         bool profiling = false;
         long totalTime;
@@ -46,10 +48,24 @@ namespace QuestAWAY
         byte[] areaMarkerTexture;
         Stopwatch stopwatch;
 
+        PluginAddressResolver addressResolver = new PluginAddressResolver();
+        private readonly Hook<MapAreaSetVisibilityAndRotationDelegate> MapAreaSetVisibilityAndRotationHook;
+        private readonly Hook<ClientUiAddonAreaMapOnUpdateDelegate> ClientUiAddonAreaMapOnUpdateHook;
+        private readonly Hook<ClientUiAddonAreaMapOnRefreshDelegate> ClientUiAddonAreaMapOnRefreshHook;
+        private readonly Hook<AddonNaviMapOnUpdateDelegate> AddonNaviMapOnUpdateHook;
+        private readonly Hook<NaviMapOnMouseMoveDelegate> NaviMapOnMouseMoveHook;
+        private readonly Hook<CheckAtkCollisionNodeIntersectDelegate> CheckAtkCollisionNodeIntersectHook;
+
         public void Dispose()
         {
             Svc.Framework.Update -= Tick;
             Svc.PluginInterface.UiBuilder.Draw -= Draw;
+            MapAreaSetVisibilityAndRotationHook.Dispose();
+            ClientUiAddonAreaMapOnUpdateHook.Dispose();
+            ClientUiAddonAreaMapOnRefreshHook.Dispose();
+            AddonNaviMapOnUpdateHook.Dispose();
+            NaviMapOnMouseMoveHook.Dispose();
+            CheckAtkCollisionNodeIntersectHook.Dispose();
             cfg.Save();
             cfg.Enabled = false;
             Svc.Commands.RemoveHandler("/questaway");
@@ -67,8 +83,35 @@ namespace QuestAWAY
             textures = new Dictionary<string, TextureWrap>();
             cfg = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             cfg.Initialize(this);
-            BuildByteSet();
+            BuildHiddenByteSet();
+            UpdateShownByteSet();
             Static.PaddingVector = ImGui.GetStyle().WindowPadding;
+
+            // hook setup
+            addressResolver.Setup();
+            ClientUiAddonAreaMapOnUpdateHook = new Hook<ClientUiAddonAreaMapOnUpdateDelegate>(
+                addressResolver.ClientUiAddonAreaMapOnUpdateAddress, ClientUiAddonAreaMapOnUpdateDetour);
+            ClientUiAddonAreaMapOnRefreshHook = new Hook<ClientUiAddonAreaMapOnRefreshDelegate>(
+                addressResolver.ClientUiAddonAreaMapOnRefreshAddress, ClientUiAddonAreaMapOnRefreshDetour);
+            MapAreaSetVisibilityAndRotationHook = new Hook<MapAreaSetVisibilityAndRotationDelegate>(
+                addressResolver.MapAreaSetVisibilityAndRotationAddress, MapAreaSetVisibilityAndRotationDetour);
+            AddonNaviMapOnUpdateHook =
+                new Hook<AddonNaviMapOnUpdateDelegate>(addressResolver.AddonNaviMapOnUpdateAddress,
+                    AddonNaviMapOnUpdateDetour);
+            NaviMapOnMouseMoveHook = 
+                new Hook<NaviMapOnMouseMoveDelegate>(addressResolver.NaviMapOnMouseMoveAddress,
+                    NaviMapOnMouseMoveDetour);
+            CheckAtkCollisionNodeIntersectHook = 
+                new Hook<CheckAtkCollisionNodeIntersectDelegate>(addressResolver.CheckAtkCollisionNodeIntersectAddress,
+                    CheckAtkCollisionNodeIntersectDetour);
+            ClientUiAddonAreaMapOnUpdateHook.Enable();
+            ClientUiAddonAreaMapOnRefreshHook.Enable();
+            MapAreaSetVisibilityAndRotationHook.Disable();
+            NaviMapOnMouseMoveHook.Enable();
+            CheckAtkCollisionNodeIntersectHook.Disable();
+            
+            AddonNaviMapOnUpdateHook.Enable();
+
             Svc.Framework.Update += Tick;
             Svc.PluginInterface.UiBuilder.Draw += Draw;
             Svc.PluginInterface.UiBuilder.OpenConfigUi += delegate { open = true; };
@@ -80,6 +123,88 @@ namespace QuestAWAY
             {
                 HelpMessage = "open/close configuration"
             });
+        }
+
+        private delegate byte CheckAtkCollisionNodeIntersectDelegate(AtkNineGridNode* node, void* a2, void* a3, void* a4);
+
+        private byte CheckAtkCollisionNodeIntersectDetour(AtkNineGridNode* node, void* a2, void* a3, void* a4)
+        {
+            if (node != null && node->AtkResNode.ParentNode != null)
+            {
+                // make intersection check fail if the map icon is not visible
+                return node->AtkResNode.ParentNode->IsVisible
+                    ? CheckAtkCollisionNodeIntersectHook.Original(node, a2, a3, a4)
+                    : (byte)0;
+            }
+            return CheckAtkCollisionNodeIntersectHook.Original(node, a2, a3, a4);
+        }
+        
+        private delegate IntPtr NaviMapOnMouseMoveDelegate(IntPtr unk1, IntPtr unk2, IntPtr unk3);
+
+        private IntPtr NaviMapOnMouseMoveDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
+        {
+            // optimization: only hook CheckAtkCollisionNodeIntersect when mouseovering the minimap
+            CheckAtkCollisionNodeIntersectHook.Enable();
+            var result = NaviMapOnMouseMoveHook.Original(unk1, unk2, unk3);
+            CheckAtkCollisionNodeIntersectHook.Disable();
+            return result;
+        }
+        
+        private delegate IntPtr AddonNaviMapOnUpdateDelegate(IntPtr unk1, IntPtr unk2, IntPtr unk3);
+
+        private IntPtr AddonNaviMapOnUpdateDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
+        {
+            // after the minimap updates its components, process them in order to hide the ones we dont want to see
+            var result = AddonNaviMapOnUpdateHook.Original(unk1, unk2, unk3);
+            ProfilingContinue();
+            ProcessMinimap(!(cfg.Enabled && cfg.Minimap));
+            ProfilingPause();
+            return result;
+        }
+
+        private delegate IntPtr ClientUiAddonAreaMapOnRefreshDelegate(IntPtr unk1, IntPtr unk2, IntPtr unk3);
+
+        private IntPtr ClientUiAddonAreaMapOnRefreshDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
+        {
+            // when the map is opened or changes zones, indicate that there should be a full hide/show of icons on the map
+            // this is because not all icons on the map are reset in AddonAreaMapOnUpdate.
+            var result = ClientUiAddonAreaMapOnRefreshHook.Original(unk1, unk2, unk3);
+            reprocess = true;
+            return result;
+        }
+
+        private delegate IntPtr ClientUiAddonAreaMapOnUpdateDelegate(IntPtr unk1, IntPtr unk2, IntPtr unk3);
+
+        private IntPtr ClientUiAddonAreaMapOnUpdateDetour(IntPtr unk1, IntPtr unk2, IntPtr unk3)
+        {
+            // Optimization: only hook processing of areamap icons when the area map is updating
+            MapAreaSetVisibilityAndRotationHook.Enable();
+            var result = ClientUiAddonAreaMapOnUpdateHook.Original(unk1, unk2, unk3);
+            MapAreaSetVisibilityAndRotationHook.Disable();
+            return result;
+        }
+
+        private delegate IntPtr MapAreaSetVisibilityAndRotationDelegate(Atk2DAreaMap** atk2DAreaMap, IntPtr unk2,
+            IntPtr unk3, IntPtr unk4, IntPtr unk5, IntPtr unk6, IntPtr unk7, IntPtr unk8, IntPtr unk9);
+
+        private IntPtr MapAreaSetVisibilityAndRotationDetour(Atk2DAreaMap** atk2DAreaMap, IntPtr unk2, IntPtr unk3,
+            IntPtr unk4, IntPtr unk5, IntPtr unk6, IntPtr unk7, IntPtr unk8, IntPtr unk9)
+        {
+            // after the game sets an item visible, check if we want to hide it
+            var result =
+                MapAreaSetVisibilityAndRotationHook.Original(atk2DAreaMap, unk2, unk3, unk4, unk5, unk6, unk7, unk8,
+                    unk9);
+
+            // the game already shows what needs to be visible, so we should only try to hide stuff
+            if (cfg.Enabled && cfg.Bigmap && atk2DAreaMap != null && *atk2DAreaMap != null &&
+                (*atk2DAreaMap)->AtkComponentNode != null && (*atk2DAreaMap)->AtkComponentNode->AtkResNode.IsVisible)
+            {
+                ProfilingContinue();
+                ProcessShit((*atk2DAreaMap)->AtkComponentNode, false, true);
+                ProfilingPause();
+            }
+
+            return result;
         }
 
         void ImGuiDrawImage(string partialPath)
@@ -176,6 +301,7 @@ namespace QuestAWAY
                             if (ImGui.Button("Clear hidden textures list" + (ImGui.GetIO().KeyCtrl ? "" : " (hold ctrl and click)")) && ImGui.GetIO().KeyCtrl)
                             {
                                 cfg.HiddenTextures.Clear();
+                                UpdateShownByteSet();
                             }
                             ImGui.Checkbox("Profiling", ref profiling);
                             if (profiling)
@@ -206,10 +332,12 @@ namespace QuestAWAY
                         if (ImGui.Selectable("All"))
                         {
                             cfg.HiddenTextures.UnionWith(Static.MapIcons);
+                            UpdateShownByteSet();
                         }
                         if (ImGui.Selectable("None"))
                         {
                             cfg.HiddenTextures.Clear();
+                            UpdateShownByteSet();
                         }
                         ImGui.EndCombo();
                     }
@@ -253,10 +381,12 @@ namespace QuestAWAY
                             if (cfg.HiddenTextures.Contains(e) && !b)
                             {
                                 cfg.HiddenTextures.Remove(e);
+                                UpdateShownByteSet();
                             }
                             if (!cfg.HiddenTextures.Contains(e) && b)
                             {
                                 cfg.HiddenTextures.Add(e);
+                                UpdateShownByteSet();
                             }
                         }
                     }
@@ -271,17 +401,34 @@ namespace QuestAWAY
             }
         }
 
+        private void ProfilingContinue()
+        {
+            if (!profiling) return;
+            stopwatch.Start();
+        }
+
+        private void ProfilingPause()
+        {
+            if (!profiling) return;
+            stopwatch.Stop();
+        }
+
+        private void ProfilingRestart()
+        {
+            if (!profiling) return;
+            
+            totalTime += stopwatch.ElapsedTicks+1;
+            totalTicks++;
+            stopwatch.Restart();
+        }
+
         [HandleProcessCorruptedStateExceptions]
         public void Tick(object _)
         {
             try
             {
-                if (profiling)
-                {
-                    totalTicks++;
-                    stopwatch.Restart();
-                }
-                if (reprocess) BuildByteSet();
+                ProfilingRestart();
+                if (reprocess) BuildHiddenByteSet();
                 var o = Svc.GameGui.GetAddonByName("AreaMap", 1);
                 if (o != IntPtr.Zero)
                 {
@@ -295,7 +442,7 @@ namespace QuestAWAY
                             quickMenuPos.X = masterWindow->X + mapCNode->AtkResNode.X * masterWindow->Scale + mapCNode->AtkResNode.Width * masterWindow->Scale / 2 - quickMenuSize.X / 2;
                             quickMenuPos.Y = masterWindow->Y + mapCNode->AtkResNode.Y * masterWindow->Scale - quickMenuSize.Y;
                         }
-                        if ((cfg.Enabled && cfg.Bigmap) || reprocess)
+                        if (reprocess)
                         {
                             ProcessMap(!(cfg.Enabled && cfg.Bigmap), masterWindow, mapCNode);
                         }
@@ -309,16 +456,8 @@ namespace QuestAWAY
                 {
                     openQuickEnable = false;
                 }
-                if ((cfg.Enabled && cfg.Minimap) || reprocess)
-                {
-                    ProcessMinimap(!(cfg.Enabled && cfg.Minimap));
-                }
                 reprocess = false;
-                if (profiling)
-                {
-                    stopwatch.Stop();
-                    totalTime += stopwatch.ElapsedTicks;
-                }
+                ProfilingPause();
             }
             catch (Exception e)
             {
@@ -349,7 +488,9 @@ namespace QuestAWAY
                     var mapCNode = (AtkComponentNode*)masterWindow->UldManager.NodeList[2];
                     for (var i = 4; i < mapCNode->Component->UldManager.NodeListCount; i++)
                     {
-                        ProcessShit((AtkComponentNode*)mapCNode->Component->UldManager.NodeList[i], showAll);
+                        AtkComponentNode* mapIconNode = (AtkComponentNode*)mapCNode->Component->UldManager.NodeList[i];
+                        if (!mapIconNode->AtkResNode.IsVisible) continue;
+                        ProcessShit(mapIconNode, showAll);
                     }
                 }
             }
@@ -357,7 +498,6 @@ namespace QuestAWAY
 
         void ProcessShit(AtkComponentNode* mapIconNode, bool showUnconditionally = false, bool isMap = false)
         {
-            if (!mapIconNode->AtkResNode.IsVisible) return;
             if (mapIconNode->Component->UldManager.NodeListCount <= 4) return;
             AtkImageNode* imageNode;
             if (mapIconNode->Component->UldManager.NodeList[4]->Type == NodeType.Image)
@@ -381,16 +521,27 @@ namespace QuestAWAY
                 {
                     if (
                         StartsWithAny(fNamePtr, cfgHideSet)
-                        ||
-                        (cfg.HideFateCircles && StartsWithAny(fNamePtr, fateTexture)
-                        && imageNode->AtkResNode.AddBlue == 100 && imageNode->AtkResNode.MultiplyRed == 50)
+                        || (
+                            cfg.HideFateCircles
+                            && StartsWithAny(fNamePtr, fateTexture)
+                            && imageNode->AtkResNode.AddBlue == 100
+                            && imageNode->AtkResNode.MultiplyRed == 50
                         )
+                    )
                     {
-                        if (mapIconNode->AtkResNode.Color.A != 0) mapIconNode->AtkResNode.Color.A = 0;
+                        mapIconNode->AtkResNode.ToggleVisibility(false);
                     }
-                    else
+                    else if (
+                        StartsWithAny(fNamePtr, cfgShowSet)
+                        || (
+                            !cfg.HideFateCircles
+                            && StartsWithAny(fNamePtr, fateTexture)
+                            && imageNode->AtkResNode.AddBlue == 100
+                            && imageNode->AtkResNode.MultiplyRed == 50
+                        )
+                    )
                     {
-                        if (mapIconNode->AtkResNode.Color.A == 0) mapIconNode->AtkResNode.Color.A = 0xff;
+                        mapIconNode->AtkResNode.ToggleVisibility(true);
                     }
 
                     if (isMap && (cfg.HideAreaMarkers || reprocess) && StartsWith(fNamePtr, areaMarkerTexture))
@@ -407,8 +558,10 @@ namespace QuestAWAY
                 }
                 else
                 {
-                    if (mapIconNode->AtkResNode.Color.A == 0) mapIconNode->AtkResNode.Color.A = 0xff;
-                    if (StartsWith(fNamePtr, areaMarkerTexture) && imageNode->AtkResNode.Color.A == 0) imageNode->AtkResNode.Color.A = 0xff;
+                    if (StartsWithAny(fNamePtr, cfgHideSet) && !mapIconNode->AtkResNode.IsVisible)
+                        mapIconNode->AtkResNode.ToggleVisibility(true);
+                    if (StartsWith(fNamePtr, areaMarkerTexture) && imageNode->AtkResNode.Color.A == 0)
+                        imageNode->AtkResNode.Color.A = 0xff;
                 }
             }
         }
@@ -432,7 +585,7 @@ namespace QuestAWAY
             return false;
         }
 
-        void BuildByteSet()
+        void BuildHiddenByteSet()
         {
             fateTexture = new byte[][] { Encoding.ASCII.GetBytes("ui/icon/060000/060496"), Encoding.ASCII.GetBytes("ui/icon/060000/060495") };
             areaMarkerTexture = Encoding.ASCII.GetBytes("ui/icon/060000/060442");
@@ -444,11 +597,24 @@ namespace QuestAWAY
             var userLinesSet = userLines.ToHashSet();
             userLinesSet.RemoveWhere((string line) => { return line.Length == 0; });
             userLinesSet.UnionWith(cfg.HiddenTextures);
+            
             cfgHideSet = new byte[userLinesSet.Count][];
             var i = 0;
             foreach(var e in userLinesSet)
             {
                 cfgHideSet[i++] = Encoding.ASCII.GetBytes(e);
+            }
+        }
+
+        void UpdateShownByteSet()
+        {
+            var shownTextures = new SortedSet<string>(Static.MapIcons); // - cfg.HiddenTextures.);
+            shownTextures.RemoveWhere(s => cfg.HiddenTextures.Contains(s));
+            cfgShowSet = new byte[shownTextures.Count][];
+            var i = 0;
+            foreach(var e in shownTextures)
+            {
+                cfgShowSet[i++] = Encoding.ASCII.GetBytes(e);
             }
         }
     }
