@@ -29,34 +29,39 @@ internal class PluginAddressResolver : BaseAddressResolver
     
     // in NaviMapOnMouseMove function, there's 3 ifs. this function is the second condition in all of them
     private const string CheckAtkCollisionNodeIntersect = "E8 ?? ?? ?? ?? 84 C0 75 B9";
+
+    // to update this sig:
+    // from AreaMap ReceiveEvent, enter the function called when a2==5 and a3==20
+    // the the only unnamed function there
+    private const string AreaMapOnMouseMove = "48 8B C4 53 56 48 83 EC 78";
     
     private const string AddonAreaMapOnUpdate = "48 8B C4 48 89 48 08 55 57";
     private const string AddonAreaMapOnRefresh = "4C 8B DC 55 56 41 56 41 57 49 8D 6B A1";
     private const string AddonNaviMapOnUpdate = "48 8B C4 55 48 81 EC ?? ?? ?? ?? F6 81";
 
-    public IntPtr MapAreaSetVisibilityAndRotationAddress { get; private set; }
-    public IntPtr ClientUiAddonAreaMapOnUpdateAddress { get; private set; }
-    public IntPtr ClientUiAddonAreaMapOnRefreshAddress { get; private set; }
+    // change 0F 95 SETNZ into 0F 94 SETZ 
+    public const string AreaMapCtrl = "0F 95 C0 3A 83 ?? ?? ?? ?? 74 ?? 83 8B";
+
+    public IntPtr AddonAreaMapOnUpdateAddress { get; private set; }
     public IntPtr AddonNaviMapOnUpdateAddress { get; private set; }
     public IntPtr NaviMapOnMouseMoveAddress { get; private set; }
     public IntPtr CheckAtkCollisionNodeIntersectAddress { get; private set; }
+    public IntPtr AreaMapOnMouseMoveAddress { get; private set; }
 
     /// <inheritdoc/>
     protected override void Setup64Bit(SigScanner scanner)
     {
-        MapAreaSetVisibilityAndRotationAddress = scanner.ScanText(MapAreaSetVisibilityAndRotation);
-        ClientUiAddonAreaMapOnUpdateAddress = scanner.ScanText(AddonAreaMapOnUpdate);
-        ClientUiAddonAreaMapOnRefreshAddress = scanner.ScanText(AddonAreaMapOnRefresh);
+        AddonAreaMapOnUpdateAddress = scanner.ScanText(AddonAreaMapOnUpdate);
         AddonNaviMapOnUpdateAddress = scanner.ScanText(AddonNaviMapOnUpdate);
         NaviMapOnMouseMoveAddress = scanner.ScanText(NaviMapOnMouseMove);
         CheckAtkCollisionNodeIntersectAddress = scanner.ScanText(CheckAtkCollisionNodeIntersect);
+        AreaMapOnMouseMoveAddress = scanner.ScanText(AreaMapOnMouseMove);
 
         PluginLog.Verbose("===== QuestAWAY =====");
-        PluginLog.Verbose($"{nameof(MapAreaSetVisibilityAndRotationAddress)} {MapAreaSetVisibilityAndRotationAddress:X}");
-        PluginLog.Verbose($"{nameof(ClientUiAddonAreaMapOnUpdateAddress)} {ClientUiAddonAreaMapOnUpdateAddress:X}");
-        PluginLog.Verbose($"{nameof(ClientUiAddonAreaMapOnRefreshAddress)} {ClientUiAddonAreaMapOnRefreshAddress:X}");
+        PluginLog.Verbose($"{nameof(AddonAreaMapOnUpdateAddress)} {AddonAreaMapOnUpdateAddress:X}");
         PluginLog.Verbose($"{nameof(AddonNaviMapOnUpdateAddress)} {AddonNaviMapOnUpdateAddress:X}");
         PluginLog.Verbose($"{nameof(NaviMapOnMouseMoveAddress)} {NaviMapOnMouseMoveAddress:X}");
         PluginLog.Verbose($"{nameof(CheckAtkCollisionNodeIntersectAddress)} {CheckAtkCollisionNodeIntersectAddress:X}");
+        PluginLog.Verbose($"{nameof(AreaMapOnMouseMoveAddress)} {AreaMapOnMouseMoveAddress:X}");
     }
 }
