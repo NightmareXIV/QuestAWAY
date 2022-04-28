@@ -50,7 +50,6 @@ namespace QuestAWAY
 
         PluginAddressResolver addressResolver = new PluginAddressResolver();
         private readonly Hook<AddonAreaMapOnUpdateDelegate> AddonAreaMapOnUpdateHook;
-        private readonly Hook<AddonAreaMapOnRefreshDelegate> AddonAreaMapOnRefreshHook;
         private readonly Hook<AddonNaviMapOnUpdateDelegate> AddonNaviMapOnUpdateHook;
         private readonly Hook<NaviMapOnMouseMoveDelegate> NaviMapOnMouseMoveHook;
         private readonly Hook<CheckAtkCollisionNodeIntersectDelegate> CheckAtkCollisionNodeIntersectHook;
@@ -61,7 +60,6 @@ namespace QuestAWAY
             Svc.Framework.Update -= Tick;
             Svc.PluginInterface.UiBuilder.Draw -= Draw;
             AddonAreaMapOnUpdateHook.Dispose();
-            AddonAreaMapOnRefreshHook.Dispose();
             AddonNaviMapOnUpdateHook.Dispose();
             NaviMapOnMouseMoveHook.Dispose();
             AreaMapOnMouseMoveHook.Dispose();
@@ -95,9 +93,6 @@ namespace QuestAWAY
             AddonAreaMapOnUpdateHook =
                 new Hook<AddonAreaMapOnUpdateDelegate>(addressResolver.AddonAreaMapOnUpdateAddress,
                     AddonAreaMapOnUpdateDetour);
-            AddonAreaMapOnRefreshHook =
-                new Hook<AddonAreaMapOnRefreshDelegate>(addressResolver.AddonAreaMapOnRefreshAddress,
-                    AddonAreaMapOnRefreshDetour);
             AddonNaviMapOnUpdateHook =
                 new Hook<AddonNaviMapOnUpdateDelegate>(addressResolver.AddonNaviMapOnUpdateAddress,
                     AddonNaviMapOnUpdateDetour);
@@ -110,7 +105,6 @@ namespace QuestAWAY
                 new Hook<AreaMapOnMouseMoveDelegate>(addressResolver.AreaMapOnMouseMoveAddress,
                     AreaMapOnMouseMoveDetour);
             AddonAreaMapOnUpdateHook.Enable();
-            AddonAreaMapOnRefreshHook.Enable();
             NaviMapOnMouseMoveHook.Enable();
             CheckAtkCollisionNodeIntersectHook.Disable();
             AddonNaviMapOnUpdateHook.Enable();
@@ -170,29 +164,10 @@ namespace QuestAWAY
         {
             // runs every frame (i think) if the minimap is visible
             var result = AddonNaviMapOnUpdateHook.Original(addonNaviMap, unk2, unk3);
-            if ((cfg.Enabled && cfg.Minimap) || reprocessNaviMap)
-            {
-                ProfilingContinue();
-                ProcessMinimap(addonNaviMap);
-                ProfilingPause();
-            }
 
-            return result;
-        }
-
-        private delegate IntPtr AddonAreaMapOnRefreshDelegate(AtkUnitBase* addonAreaMap, IntPtr unk2, IntPtr unk3);
-
-        private IntPtr AddonAreaMapOnRefreshDetour(AtkUnitBase* addonAreaMap, IntPtr unk2, IntPtr unk3)
-        {
-            // runs when the area map is opened or changes areas
-            var result = AddonAreaMapOnRefreshHook.Original(addonAreaMap, unk2, unk3);
-            if ((cfg.Enabled && cfg.Bigmap) || reprocessAreaMap)
-            {
-                ProfilingContinue();
-                ProcessAreaMap(addonAreaMap);
-                reprocessAreaMap = true;
-                ProfilingPause();
-            }
+            ProfilingContinue();
+            ProcessMinimap(addonNaviMap);
+            ProfilingPause();
 
             return result;
         }
@@ -203,12 +178,10 @@ namespace QuestAWAY
         {
             // runs every frame if the area map is open and loaded
             var result = AddonAreaMapOnUpdateHook.Original(addonAreaMap, unk2, unk3);
-            if (reprocessAreaMap)
-            {
-                ProfilingContinue();
-                ProcessAreaMap(addonAreaMap);
-                ProfilingPause();
-            }
+
+            ProfilingContinue();
+            ProcessAreaMap(addonAreaMap);
+            ProfilingPause();
 
             return result;
         }
@@ -471,7 +444,7 @@ namespace QuestAWAY
         void ProcessAreaMap(AtkUnitBase* masterWindow)
         {
             if ((!cfg.Enabled || !cfg.Bigmap) && !reprocessAreaMap) return;
-            
+
             if (masterWindow != null
                 && masterWindow->IsVisible
                 && masterWindow->UldManager.NodeListCount > 3)
