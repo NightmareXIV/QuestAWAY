@@ -19,7 +19,7 @@ public class MemoryReplacer : IDisposable
         var addr = IntPtr.Zero;
         try
         {
-            addr = Svc.SigScanner.ScanModule(sig);
+            addr = Svc.SigScanner.ScanText(sig);
         }
         catch
         {

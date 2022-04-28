@@ -59,8 +59,7 @@ namespace QuestAWAY
         private Hook<CheckAtkCollisionNodeIntersectDelegate> CheckAtkCollisionNodeIntersectHook;
         private Hook<AreaMapOnMouseMoveDelegate> AreaMapOnMouseMoveHook;
 
-        public static readonly MemoryReplacer AreaMapCtrlAlwaysOn =
-            new(PluginAddressResolver.AreaMapCtrl, new byte[] { 0x0F, 0x94 });
+        public static MemoryReplacer AreaMapCtrlAlwaysOn;
 
         public void Dispose()
         {
@@ -133,6 +132,7 @@ namespace QuestAWAY
                 CheckAtkCollisionNodeIntersectHook.Disable();
                 AddonNaviMapOnUpdateHook.Enable();
                 AreaMapOnMouseMoveHook.Enable();
+                AreaMapCtrlAlwaysOn = new(PluginAddressResolver.AreaMapCtrl, new byte[] { 0x0F, 0x94 });
 
                 if (cfg.AetheryteInFront)
                     AreaMapCtrlAlwaysOn.Enable();
