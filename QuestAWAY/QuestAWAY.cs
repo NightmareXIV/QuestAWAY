@@ -67,9 +67,14 @@ namespace QuestAWAY
             AreaMapOnMouseMoveHook.Dispose();
             CheckAtkCollisionNodeIntersectHook.Dispose();
             cfg.Save();
+
             cfg.Enabled = false;
+            reprocessNaviMap = true;
+            reprocessAreaMap = true;
+            ProcessMinimap((AtkUnitBase*)Svc.GameGui.GetAddonByName("_NaviMap", 1));
+            ProcessAreaMap((AtkUnitBase*)Svc.GameGui.GetAddonByName("AreaMap", 1));
+
             Svc.Commands.RemoveHandler("/questaway");
-            Tick(null);
             foreach (var t in textures.Values)
             {
                 t.Dispose();
@@ -181,10 +186,11 @@ namespace QuestAWAY
         {
             // runs when the area map is opened or changes areas
             var result = AddonAreaMapOnRefreshHook.Original(addonAreaMap, unk2, unk3);
-            if (reprocessAreaMap)
+            if ((cfg.Enabled && cfg.Bigmap) || reprocessAreaMap)
             {
                 ProfilingContinue();
                 ProcessAreaMap(addonAreaMap);
+                reprocessAreaMap = true;
                 ProfilingPause();
             }
 
