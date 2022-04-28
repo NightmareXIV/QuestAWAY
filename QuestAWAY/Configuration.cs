@@ -21,6 +21,7 @@ namespace QuestAWAY
         public string CustomPathes = "";
         public bool HideFateCircles = false;
         public bool HideAreaMarkers = false;
+        public bool AetheryteInFront = false;
 
         [NonSerialized]
         private QuestAWAY p;

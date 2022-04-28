@@ -55,6 +55,9 @@ namespace QuestAWAY
         private readonly Hook<CheckAtkCollisionNodeIntersectDelegate> CheckAtkCollisionNodeIntersectHook;
         private readonly Hook<AreaMapOnMouseMoveDelegate> AreaMapOnMouseMoveHook;
 
+        public static readonly MemoryReplacer AreaMapCtrlAlwaysOn =
+            new(PluginAddressResolver.AreaMapCtrl, new byte[] { 0x0F, 0x94 });
+
         public void Dispose()
         {
             Svc.Framework.Update -= Tick;
@@ -65,6 +68,8 @@ namespace QuestAWAY
             AreaMapOnMouseMoveHook.Dispose();
             CheckAtkCollisionNodeIntersectHook.Dispose();
             cfg.Save();
+            
+            AreaMapCtrlAlwaysOn.Dispose();
 
             cfg.Enabled = false;
             reprocessNaviMap = true;
@@ -109,6 +114,9 @@ namespace QuestAWAY
             CheckAtkCollisionNodeIntersectHook.Disable();
             AddonNaviMapOnUpdateHook.Enable();
             AreaMapOnMouseMoveHook.Enable();
+            
+            if(cfg.AetheryteInFront)
+                AreaMapCtrlAlwaysOn.Enable();
 
             Svc.Framework.Update += Tick;
             Svc.PluginInterface.UiBuilder.Draw += Draw;
@@ -247,6 +255,8 @@ namespace QuestAWAY
                         ImGui.Checkbox("Hide icons on big map", ref cfg.Bigmap);
                         ImGui.Checkbox("Hide icons on minimap", ref cfg.Minimap);
                         ImGui.Checkbox("Display quick enable/disable on big map", ref cfg.QuickEnable);
+                        if(ImGui.Checkbox("Aetherytes always in front on big map", ref cfg.AetheryteInFront))
+                            AreaMapCtrlAlwaysOn.Toggle();
                         ImGui.Text("Additional pathes to hide (one per line, without _hr1 and .tex)");
                         ImGui.InputTextMultiline("##QAUSERADD", ref cfg.CustomPathes, 1000000, new Vector2(300f, 100f));
                         if (ImGui.CollapsingHeader("Developer settings"))

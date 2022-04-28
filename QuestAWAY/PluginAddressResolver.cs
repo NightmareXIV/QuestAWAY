@@ -39,9 +39,10 @@ internal class PluginAddressResolver : BaseAddressResolver
     private const string AddonAreaMapOnRefresh = "4C 8B DC 55 56 41 56 41 57 49 8D 6B A1";
     private const string AddonNaviMapOnUpdate = "48 8B C4 55 48 81 EC ?? ?? ?? ?? F6 81";
 
-    public IntPtr MapAreaSetVisibilityAndRotationAddress { get; private set; }
+    // change 0F 95 SETNZ into 0F 94 SETZ 
+    public const string AreaMapCtrl = "0F 95 C0 3A 83 ?? ?? ?? ?? 74 ?? 83 8B";
+
     public IntPtr AddonAreaMapOnUpdateAddress { get; private set; }
-    public IntPtr AddonAreaMapOnRefreshAddress { get; private set; }
     public IntPtr AddonNaviMapOnUpdateAddress { get; private set; }
     public IntPtr NaviMapOnMouseMoveAddress { get; private set; }
     public IntPtr CheckAtkCollisionNodeIntersectAddress { get; private set; }
@@ -50,18 +51,14 @@ internal class PluginAddressResolver : BaseAddressResolver
     /// <inheritdoc/>
     protected override void Setup64Bit(SigScanner scanner)
     {
-        MapAreaSetVisibilityAndRotationAddress = scanner.ScanText(MapAreaSetVisibilityAndRotation);
         AddonAreaMapOnUpdateAddress = scanner.ScanText(AddonAreaMapOnUpdate);
-        AddonAreaMapOnRefreshAddress = scanner.ScanText(AddonAreaMapOnRefresh);
         AddonNaviMapOnUpdateAddress = scanner.ScanText(AddonNaviMapOnUpdate);
         NaviMapOnMouseMoveAddress = scanner.ScanText(NaviMapOnMouseMove);
         CheckAtkCollisionNodeIntersectAddress = scanner.ScanText(CheckAtkCollisionNodeIntersect);
         AreaMapOnMouseMoveAddress = scanner.ScanText(AreaMapOnMouseMove);
 
         PluginLog.Verbose("===== QuestAWAY =====");
-        PluginLog.Verbose($"{nameof(MapAreaSetVisibilityAndRotationAddress)} {MapAreaSetVisibilityAndRotationAddress:X}");
         PluginLog.Verbose($"{nameof(AddonAreaMapOnUpdateAddress)} {AddonAreaMapOnUpdateAddress:X}");
-        PluginLog.Verbose($"{nameof(AddonAreaMapOnRefreshAddress)} {AddonAreaMapOnRefreshAddress:X}");
         PluginLog.Verbose($"{nameof(AddonNaviMapOnUpdateAddress)} {AddonNaviMapOnUpdateAddress:X}");
         PluginLog.Verbose($"{nameof(NaviMapOnMouseMoveAddress)} {NaviMapOnMouseMoveAddress:X}");
         PluginLog.Verbose($"{nameof(CheckAtkCollisionNodeIntersectAddress)} {CheckAtkCollisionNodeIntersectAddress:X}");
