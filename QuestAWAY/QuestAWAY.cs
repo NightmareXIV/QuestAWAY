@@ -19,113 +19,134 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Hooking;
+using Dalamud.Interface.Windowing;
+using static QuestAWAY.Static;
 
 namespace QuestAWAY
 {
     unsafe class QuestAWAY : IDalamudPlugin
     {
         public string Name => "QuestAWAY";
-        bool open = false;
-        bool collect = false;
-        bool collectDisplay = false;
-        HashSet<string> texSet = new HashSet<string>();
-        HashSet<string> userDefinedTextureSet = new HashSet<string>();
+        internal static QuestAWAY P;
+        internal bool collect = false;
+        internal bool collectDisplay = false;
+        internal HashSet<string> texSet = new HashSet<string>();
+        internal HashSet<string> userDefinedTextureSet = new HashSet<string>();
         internal Vector2 quickMenuPos = new Vector2(0f, 0f);
         internal Vector2 quickMenuSize = Vector2.Zero;
-        Dictionary<string, TextureWrap> textures;
-        Configuration cfg;
-        static Vector2 Vector2Scale = new Vector2(48f, 48f);
-        private bool onlySelected = false;
-        private bool openQuickEnable = false;
-        private byte[][] cfgHideSet = { };
-        private volatile bool reprocessNaviMap = true;
-        private volatile bool reprocessAreaMap = true;
-        long tick = 0;
-        bool profiling = false;
-        long totalTime;
-        long totalTicks;
-        byte[][] fateTexture;
-        byte[] areaMarkerTexture;
-        Stopwatch stopwatch;
+        internal Dictionary<string, TextureWrap> textures;
+        internal Configuration cfg;
+        internal static Vector2 Vector2Scale = new Vector2(48f, 48f);
+        internal bool onlySelected = false;
+        internal bool openQuickEnable = false;
+        internal byte[][] cfgHideSet = { };
+        internal volatile bool reprocessNaviMap = true;
+        internal volatile bool reprocessAreaMap = true;
+        internal long tick = 0;
+        internal bool profiling = false;
+        internal long totalTime;
+        internal long totalTicks;
+        internal byte[][] fateTexture;
+        internal byte[] areaMarkerTexture;
+        internal Stopwatch stopwatch;
+        internal WindowSystem windowSystem;
+        internal ConfigGui configGui;
 
         PluginAddressResolver addressResolver = new PluginAddressResolver();
-        private readonly Hook<AddonAreaMapOnUpdateDelegate> AddonAreaMapOnUpdateHook;
-        private readonly Hook<AddonNaviMapOnUpdateDelegate> AddonNaviMapOnUpdateHook;
-        private readonly Hook<NaviMapOnMouseMoveDelegate> NaviMapOnMouseMoveHook;
-        private readonly Hook<CheckAtkCollisionNodeIntersectDelegate> CheckAtkCollisionNodeIntersectHook;
-        private readonly Hook<AreaMapOnMouseMoveDelegate> AreaMapOnMouseMoveHook;
+        private Hook<AddonAreaMapOnUpdateDelegate> AddonAreaMapOnUpdateHook;
+        private Hook<AddonNaviMapOnUpdateDelegate> AddonNaviMapOnUpdateHook;
+        private Hook<NaviMapOnMouseMoveDelegate> NaviMapOnMouseMoveHook;
+        private Hook<CheckAtkCollisionNodeIntersectDelegate> CheckAtkCollisionNodeIntersectHook;
+        private Hook<AreaMapOnMouseMoveDelegate> AreaMapOnMouseMoveHook;
 
         public static readonly MemoryReplacer AreaMapCtrlAlwaysOn =
             new(PluginAddressResolver.AreaMapCtrl, new byte[] { 0x0F, 0x94 });
 
         public void Dispose()
         {
-            Svc.Framework.Update -= Tick;
-            Svc.PluginInterface.UiBuilder.Draw -= Draw;
-            AddonAreaMapOnUpdateHook.Dispose();
-            AddonNaviMapOnUpdateHook.Dispose();
-            NaviMapOnMouseMoveHook.Dispose();
-            AreaMapOnMouseMoveHook.Dispose();
-            CheckAtkCollisionNodeIntersectHook.Dispose();
-            cfg.Save();
-            
-            AreaMapCtrlAlwaysOn.Dispose();
+            //Dalamud doesn't lets reload plugin if exception is thrown by Dispose method. It is unwanted behavior, bypassing it.
+            //Individual try-catches let as many things execute as possible
+            Safe(() => {
+                Svc.Framework.Update -= Tick;
+                Svc.PluginInterface.UiBuilder.Draw -= Draw;
+                Svc.PluginInterface.UiBuilder.Draw -= windowSystem.Draw;
+            });
+            Safe(AddonAreaMapOnUpdateHook.Dispose);
+            Safe(AddonNaviMapOnUpdateHook.Dispose);
+            Safe(NaviMapOnMouseMoveHook.Dispose);
+            Safe(AreaMapOnMouseMoveHook.Dispose);
+            Safe(CheckAtkCollisionNodeIntersectHook.Dispose);
+            Safe(cfg.Save);
 
-            cfg.Enabled = false;
-            reprocessNaviMap = true;
-            reprocessAreaMap = true;
-            ProcessMinimap((AtkUnitBase*)Svc.GameGui.GetAddonByName("_NaviMap", 1));
-            ProcessAreaMap((AtkUnitBase*)Svc.GameGui.GetAddonByName("AreaMap", 1));
+            Safe(AreaMapCtrlAlwaysOn.Dispose);
 
-            Svc.Commands.RemoveHandler("/questaway");
-            foreach (var t in textures.Values)
+            Safe(() =>
             {
-                t.Dispose();
-            }
+                cfg.Enabled = false;
+                reprocessNaviMap = true;
+                reprocessAreaMap = true;
+                ProcessMinimap((AtkUnitBase*)Svc.GameGui.GetAddonByName("_NaviMap", 1));
+                ProcessAreaMap((AtkUnitBase*)Svc.GameGui.GetAddonByName("AreaMap", 1));
+
+                Svc.Commands.RemoveHandler("/questaway");
+                foreach (var t in textures.Values)
+                {
+                    t.Dispose();
+                }
+            });
         }
 
         public QuestAWAY(DalamudPluginInterface pluginInterface)
         {
+            P = this;
             pluginInterface.Create<Svc>();
-            textures = new Dictionary<string, TextureWrap>();
-            cfg = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-            cfg.Initialize(this);
-            BuildHiddenByteSet();
-            Static.PaddingVector = ImGui.GetStyle().WindowPadding;
-
-            // hook setup
-            addressResolver.Setup();
-            AddonAreaMapOnUpdateHook =
-                new Hook<AddonAreaMapOnUpdateDelegate>(addressResolver.AddonAreaMapOnUpdateAddress,
-                    AddonAreaMapOnUpdateDetour);
-            AddonNaviMapOnUpdateHook =
-                new Hook<AddonNaviMapOnUpdateDelegate>(addressResolver.AddonNaviMapOnUpdateAddress,
-                    AddonNaviMapOnUpdateDetour);
-            NaviMapOnMouseMoveHook =
-                new Hook<NaviMapOnMouseMoveDelegate>(addressResolver.NaviMapOnMouseMoveAddress,
-                    NaviMapOnMouseMoveDetour);
-            CheckAtkCollisionNodeIntersectHook = new Hook<CheckAtkCollisionNodeIntersectDelegate>(
-                addressResolver.CheckAtkCollisionNodeIntersectAddress, CheckAtkCollisionNodeIntersectDetour);
-            AreaMapOnMouseMoveHook =
-                new Hook<AreaMapOnMouseMoveDelegate>(addressResolver.AreaMapOnMouseMoveAddress,
-                    AreaMapOnMouseMoveDetour);
-            AddonAreaMapOnUpdateHook.Enable();
-            NaviMapOnMouseMoveHook.Enable();
-            CheckAtkCollisionNodeIntersectHook.Disable();
-            AddonNaviMapOnUpdateHook.Enable();
-            AreaMapOnMouseMoveHook.Enable();
-            
-            if(cfg.AetheryteInFront)
-                AreaMapCtrlAlwaysOn.Enable();
-
-            Svc.Framework.Update += Tick;
-            Svc.PluginInterface.UiBuilder.Draw += Draw;
-            Svc.PluginInterface.UiBuilder.OpenConfigUi += delegate { open = true; };
-            stopwatch = new Stopwatch();
-            Svc.Commands.AddHandler("/questaway", new CommandInfo(delegate { open = !open; })
+            //this is because Dalamud can now execute constructor in different thread, which we never want
+            new TickScheduler(delegate
             {
-                HelpMessage = "open/close configuration"
-            });
+                windowSystem = new();
+                configGui = new();
+                windowSystem.AddWindow(configGui);
+                textures = new();
+                cfg = pluginInterface.GetPluginConfig() as Configuration ?? new();
+                cfg.Initialize(this);
+                BuildHiddenByteSet();
+                Static.PaddingVector = ImGui.GetStyle().WindowPadding;
+
+                // hook setup
+                addressResolver.Setup();
+                AddonAreaMapOnUpdateHook =
+                    new Hook<AddonAreaMapOnUpdateDelegate>(addressResolver.AddonAreaMapOnUpdateAddress,
+                        AddonAreaMapOnUpdateDetour);
+                AddonNaviMapOnUpdateHook =
+                    new Hook<AddonNaviMapOnUpdateDelegate>(addressResolver.AddonNaviMapOnUpdateAddress,
+                        AddonNaviMapOnUpdateDetour);
+                NaviMapOnMouseMoveHook =
+                    new Hook<NaviMapOnMouseMoveDelegate>(addressResolver.NaviMapOnMouseMoveAddress,
+                        NaviMapOnMouseMoveDetour);
+                CheckAtkCollisionNodeIntersectHook = new Hook<CheckAtkCollisionNodeIntersectDelegate>(
+                    addressResolver.CheckAtkCollisionNodeIntersectAddress, CheckAtkCollisionNodeIntersectDetour);
+                AreaMapOnMouseMoveHook =
+                    new Hook<AreaMapOnMouseMoveDelegate>(addressResolver.AreaMapOnMouseMoveAddress,
+                        AreaMapOnMouseMoveDetour);
+                AddonAreaMapOnUpdateHook.Enable();
+                NaviMapOnMouseMoveHook.Enable();
+                CheckAtkCollisionNodeIntersectHook.Disable();
+                AddonNaviMapOnUpdateHook.Enable();
+                AreaMapOnMouseMoveHook.Enable();
+
+                if (cfg.AetheryteInFront)
+                    AreaMapCtrlAlwaysOn.Enable();
+
+                Svc.Framework.Update += Tick;
+                Svc.PluginInterface.UiBuilder.Draw += Draw;
+                Svc.PluginInterface.UiBuilder.Draw += windowSystem.Draw;
+                Svc.PluginInterface.UiBuilder.OpenConfigUi += delegate { configGui.IsOpen = true; };
+                stopwatch = new Stopwatch();
+                Svc.Commands.AddHandler("/questaway", new CommandInfo(delegate { configGui.IsOpen = !configGui.IsOpen; })
+                {
+                    HelpMessage = "open/close configuration"
+                });
+            }, Svc.Framework);
         }
 
         private delegate byte CheckAtkCollisionNodeIntersectDelegate(AtkNineGridNode* node, void* a2, void* a3,
@@ -194,22 +215,6 @@ namespace QuestAWAY
             return result;
         }
 
-        void ImGuiDrawImage(string partialPath)
-        {
-            try
-            {
-                if (!textures.ContainsKey(partialPath))
-                {
-                    textures[partialPath] = Svc.Data.GetImGuiTexture(partialPath + ".tex");
-                }
-                ImGui.Image(textures[partialPath].ImGuiHandle, Vector2Scale, Vector2.Zero, Vector2.One, Vector4.One);
-            }
-            catch (Exception ex)
-            {
-                Svc.Chat.Print("[QuestAWAY error] " + ex.Message + "\n" + ex.StackTrace);
-            }
-        }
-
         private void Draw()
         {
             if (openQuickEnable)
@@ -235,160 +240,11 @@ namespace QuestAWAY
                 ImGui.SameLine();
                 if (Static.ImGuiIconButton(FontAwesomeIcon.Cog, "QuestAWAY settings"))
                 {
-                    open = true;
+                    configGui.IsOpen = true;
                 }
                 quickMenuSize = ImGui.GetWindowSize();
                 ImGui.End();
                 ImGui.PopStyleVar(2);
-            }
-
-            if (open)
-            {
-                reprocessAreaMap = true;
-                reprocessNaviMap = true;
-                ImGui.SetNextWindowSize(new Vector2(500, 500), ImGuiCond.FirstUseEver);
-                if (ImGui.Begin("QuestAWAY configuration", ref open))
-                {
-                    if (ImGui.CollapsingHeader("Settings"))
-                    {
-                        ImGui.Checkbox("Plugin enabled", ref cfg.Enabled);
-                        ImGui.Checkbox("Hide icons on big map", ref cfg.Bigmap);
-                        ImGui.Checkbox("Hide icons on minimap", ref cfg.Minimap);
-                        ImGui.Checkbox("Display quick enable/disable on big map", ref cfg.QuickEnable);
-                        if(ImGui.Checkbox("Aetherytes always in front on big map", ref cfg.AetheryteInFront))
-                            AreaMapCtrlAlwaysOn.Toggle();
-                        ImGui.Text("Additional pathes to hide (one per line, without _hr1 and .tex)");
-                        ImGui.InputTextMultiline("##QAUSERADD", ref cfg.CustomPathes, 1000000, new Vector2(300f, 100f));
-                        if (ImGui.CollapsingHeader("Developer settings"))
-                        {
-                            ImGui.Checkbox("[dev] Enable texture collecting", ref collect);
-                            if (collect)
-                            {
-                                if (ImGui.Button("Reset"))
-                                {
-                                    texSet.Clear();
-                                }
-                                ImGui.SameLine();
-                                ImGui.Checkbox("Display textures", ref collectDisplay);
-                                if (collectDisplay) 
-                                {
-                                    foreach (var e in texSet)
-                                    {
-                                        ImGuiDrawImage(e);
-                                        ImGui.SameLine();
-                                        if (!Static.MapIcons.Contains(e)) ImGui.PushStyleColor(ImGuiCol.Button, 0xff0000ff);
-                                        if(ImGui.Button("Copy: " + e))
-                                        {
-                                            ImGui.SetClipboardText(e);
-                                        }
-                                        if (!Static.MapIcons.Contains(e)) ImGui.PopStyleColor();
-                                    }
-                                }
-                                var s = string.Join("\n", texSet);
-                                ImGui.InputTextMultiline("##QADATA", ref s, 1000000, new Vector2(300f, 100f));
-                            }
-
-                            ImGui.Separator();
-                            if (ImGui.Button("Clear hidden textures list" + (ImGui.GetIO().KeyCtrl ? "" : " (hold ctrl and click)")) && ImGui.GetIO().KeyCtrl)
-                            {
-                                cfg.HiddenTextures.Clear();
-                                BuildHiddenByteSet();
-                            }
-                            ImGui.Checkbox("Profiling", ref profiling);
-                            if (profiling)
-                            {
-                                ImGui.Text("Total time: " + totalTime);
-                                ImGui.Text("Total ticks: " + totalTicks);
-                                ImGui.Text("Tick avg: " + (float)totalTime / (float)totalTicks);
-                                ImGui.Text("MS avg: " + ((float)totalTime / (float)totalTicks) / (float)Stopwatch.Frequency * 1000 + " ms");
-                                if (ImGui.Button("Reset##SW"))
-                                {
-                                    totalTicks = 0;
-                                    totalTime = 0;
-                                }
-                            }
-                        }
-                        ImGui.Separator();
-                    }
-                    ImGui.Text("Special hiding options:");
-                    ImGui.Checkbox("Hide fate circles", ref cfg.HideFateCircles);
-                    ImGui.Checkbox("Hide subarea markers, but keep text", ref cfg.HideAreaMarkers);
-                    ImGui.Text("Icons to hide:");
-                    ImGui.SameLine();
-                    ImGui.Checkbox("Only selected", ref onlySelected);
-                    ImGui.SameLine();
-                    ImGui.SetNextItemWidth(100f);
-                    if (ImGui.BeginCombo("##QASELOPT", "Select..."))
-                    {
-                        if (ImGui.Selectable("All"))
-                        {
-                            cfg.HiddenTextures.UnionWith(Static.MapIcons);
-                            BuildHiddenByteSet();
-                        }
-                        if (ImGui.Selectable("None"))
-                        {
-                            cfg.HiddenTextures.Clear();
-                            BuildHiddenByteSet();
-                        }
-                        ImGui.EndCombo();
-                    }
-                    ImGui.BeginChild("##QAWAYCHILD");
-                    ImGuiHelpers.ScaledDummy(10f);
-                    var width = ImGui.GetColumnWidth();
-                    var numColumns = Math.Max((int)(width / 100), 2);
-                    ImGui.Columns(numColumns);
-                    for (var i = 0; i < numColumns; i++)
-                    {
-                        ImGui.SetColumnWidth(i, width / (float)numColumns);
-                    }
-                    foreach (var e in Static.MapIcons)
-                    {
-                        var b = cfg.HiddenTextures.Contains(e);
-                        if (!onlySelected || cfg.HiddenTextures.Contains(e))
-                        {
-                            ImGui.Checkbox("##" + e, ref b);
-                            ImGui.SameLine();
-                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 11);
-                            ImGuiDrawImage(e+"_hr1");
-                            if (ImGui.IsItemHovered() && ImGui.GetMouseDragDelta() == Vector2.Zero)
-                            {
-                                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-                                if (Static.MapIconNames[e].Length > 0 || ImGui.GetIO().KeyCtrl)
-                                {
-                                    ImGui.SetTooltip(Static.MapIconNames[e].Length > 0 ? Static.MapIconNames[e] : e);
-                                }
-                                if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Right))
-                                {
-                                    ImGui.SetClipboardText(e);
-                                }
-                                if (ImGui.IsMouseReleased(ImGuiMouseButton.Left))
-                                {
-                                    b = !b;
-                                }
-                            }
-                            
-                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 11);
-                            ImGui.NextColumn();
-                            if (cfg.HiddenTextures.Contains(e) && !b)
-                            {
-                                cfg.HiddenTextures.Remove(e);
-                                BuildHiddenByteSet();
-                            }
-                            if (!cfg.HiddenTextures.Contains(e) && b)
-                            {
-                                cfg.HiddenTextures.Add(e);
-                                BuildHiddenByteSet();
-                            }
-                        }
-                    }
-                    ImGui.Columns(1);
-                    ImGui.EndChild();
-                }
-                ImGui.End();
-                if (!open)
-                {
-                    cfg.Save();
-                }
             }
         }
 
@@ -413,7 +269,6 @@ namespace QuestAWAY
             stopwatch.Restart();
         }
 
-        [HandleProcessCorruptedStateExceptions]
         public void Tick(object _)
         {
             try
@@ -544,7 +399,7 @@ namespace QuestAWAY
             }
         }
 
-        bool StartsWithAny(byte* sPtr, byte[][] set)
+        internal bool StartsWithAny(byte* sPtr, byte[][] set)
         {
             foreach (var b in set)
             {
@@ -553,7 +408,7 @@ namespace QuestAWAY
             return false;
         }
 
-        bool StartsWith(byte* sPtr, byte[] b)
+        internal bool StartsWith(byte* sPtr, byte[] b)
         {
             for (int i = 0; i < b.Length; i++)
             {
@@ -563,7 +418,7 @@ namespace QuestAWAY
             return false;
         }
 
-        void BuildHiddenByteSet()
+        internal void BuildHiddenByteSet()
         {
             fateTexture = new byte[][] { Encoding.ASCII.GetBytes("ui/icon/060000/060496"), Encoding.ASCII.GetBytes("ui/icon/060000/060495") };
             areaMarkerTexture = Encoding.ASCII.GetBytes("ui/icon/060000/060442");

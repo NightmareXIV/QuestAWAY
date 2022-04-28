@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface;
+using Dalamud.Logging;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
@@ -237,5 +238,17 @@ namespace QuestAWAY
         };
 
         public static SortedSet<string> MapIcons = new SortedSet<string>(MapIconNames.Keys);
+
+        public static void Safe(Action a)
+        {
+            try
+            {
+                a();
+            }
+            catch (Exception e)
+            {
+                PluginLog.Error($"{e.Message}\n{e.StackTrace ?? ""}");
+            }
+        }
     }
 }
