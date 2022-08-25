@@ -1,5 +1,7 @@
 ﻿global using static ECommons.GenericHelpers;
 global using ECommons.DalamudServices;
+global using static QuestAWAY.Static;
+global using static QuestAWAY.QuestAWAY;
 using Dalamud.Interface;
 using Dalamud.Logging;
 using ImGuiNET;
@@ -15,6 +17,22 @@ namespace QuestAWAY
     public static class Static
     {
         public const uint ActiveToggleButtonColor = 0x6600b500;
+
+        internal static void ImGuiDrawImage(string partialPath)
+        {
+            try
+            {
+                if (!P.textures.ContainsKey(partialPath))
+                {
+                    P.textures[partialPath] = Svc.Data.GetImGuiTexture(partialPath + ".tex");
+                }
+                ImGui.Image(P.textures[partialPath].ImGuiHandle, Vector2Scale, Vector2.Zero, Vector2.One, Vector4.One);
+            }
+            catch (Exception ex)
+            {
+                Svc.Chat.Print("[QuestAWAY error] " + ex.Message + "\n" + ex.StackTrace);
+            }
+        }
 
         public static bool ImGuiToggleButton(string text, ref bool flag)
         {

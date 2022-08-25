@@ -22,15 +22,7 @@ namespace QuestAWAY
         public bool HideFateCircles = false;
         public bool HideAreaMarkers = false;
         public bool AetheryteInFront = false;
-        public Dictionary<uint, Configuration> ZoneHiddenTextures = new();
-
-        [NonSerialized]
-        private QuestAWAY p;
-
-        public void Initialize(QuestAWAY p)
-        {
-            this.p = p;
-        }
+        public Dictionary<uint, Configuration> ZoneSettings = new();
 
         public void Save()
         {
