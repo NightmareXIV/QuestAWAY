@@ -38,7 +38,8 @@ namespace QuestAWAY.Gui
             ImGuiEx.EzTabBar("questaway",
                 ("Global settings", MainSettings.Draw, null, true),
                 ("Per-zone settings", ZoneSettings.Draw, null, true),
-                ("Developer functions", DevSettings.Draw, null, true)
+                ("Developer functions", DevSettings.Draw, null, true),
+                ("Contribute", Donation.DonationTabDraw, null, true)
                 );
 
             
