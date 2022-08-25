@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Dalamud.Hooking;
 using Dalamud.Interface.Windowing;
 using static QuestAWAY.Static;
+using QuestAWAY.Gui;
 
 namespace QuestAWAY
 {
@@ -61,6 +62,8 @@ namespace QuestAWAY
 
         public static MemoryReplacer AreaMapCtrlAlwaysOn;
 
+        public static Configuration CurrentProfile;
+
         public void Dispose()
         {
             //Dalamud doesn't lets reload plugin if exception is thrown by Dispose method. It is unwanted behavior, bypassing it.
@@ -93,12 +96,14 @@ namespace QuestAWAY
                     t.Dispose();
                 }
             });
+            ECommons.ECommons.Dispose();
+            P = null;
         }
 
         public QuestAWAY(DalamudPluginInterface pluginInterface)
         {
+            ECommons.ECommons.Init(pluginInterface);
             P = this;
-            pluginInterface.Create<Svc>();
             //this is because Dalamud can now execute constructor in different thread, which we never want
             new TickScheduler(delegate
             {
@@ -113,6 +118,7 @@ namespace QuestAWAY
 
                 // hook setup
                 addressResolver.Setup();
+#pragma warning disable CS0618
                 AddonAreaMapOnUpdateHook =
                     new Hook<AddonAreaMapOnUpdateDelegate>(addressResolver.AddonAreaMapOnUpdateAddress,
                         AddonAreaMapOnUpdateDetour);
@@ -146,7 +152,13 @@ namespace QuestAWAY
                 {
                     HelpMessage = "open/close configuration"
                 });
+                Svc.ClientState.TerritoryChanged += ClientState_TerritoryChanged;
             }, Svc.Framework);
+        }
+
+        internal void ClientState_TerritoryChanged(object sender, ushort e)
+        {
+            
         }
 
         private delegate byte CheckAtkCollisionNodeIntersectDelegate(AtkNineGridNode* node, void* a2, void* a3,
@@ -365,11 +377,15 @@ namespace QuestAWAY
                 var fNamePtr = textureInfo->AtkTexture.Resource->TexFileResourceHandle->ResourceHandle.FileName.BufferPtr;
                 if (!showUnconditionally)
                 {
+                    /*if(StartsWithAny(fNamePtr, fateTexture))
+                    {
+                        PluginLog.Information($"{imageNode->AtkResNode.AddBlue}, {imageNode->AtkResNode.AddRed}, {imageNode->AtkResNode.AddGreen}, {imageNode->AtkResNode.MultiplyBlue}, {imageNode->AtkResNode.MultiplyRed}, {imageNode->AtkResNode.MultiplyGreen}, ");
+                    }*/
                     if (
                         StartsWithAny(fNamePtr, cfgHideSet)
                         ||
                         (cfg.HideFateCircles && StartsWithAny(fNamePtr, fateTexture)
-                        && imageNode->AtkResNode.AddBlue == 100 && imageNode->AtkResNode.MultiplyRed == 50)
+                        && imageNode->AtkResNode.AddBlue == 128 && imageNode->AtkResNode.AddGreen == 48 && imageNode->AtkResNode.MultiplyBlue == 100 && imageNode->AtkResNode.MultiplyGreen == 60)
                         )
                     {
                         if (mapIconNode->AtkResNode.Color.A != 0) mapIconNode->AtkResNode.Color.A = 0;

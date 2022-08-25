@@ -1,4 +1,6 @@
-﻿using Dalamud.Interface;
+﻿global using static ECommons.GenericHelpers;
+global using ECommons.DalamudServices;
+using Dalamud.Interface;
 using Dalamud.Logging;
 using ImGuiNET;
 using System;
@@ -235,20 +237,12 @@ namespace QuestAWAY
                 { "ui/icon/063000/063932", "Studium delivery" },
                 { "ui/icon/060000/060441", "Adjoining area marker" },
                 { "ui/icon/060000/060091", "Gemstone trader" },
+                { "ui/icon/063000/063964", "Island logs" },
+                { "ui/icon/063000/063963", "Island leafs" },
+                { "ui/icon/063000/063965", "Island crystals" },
+                { "ui/icon/063000/063966", "Island crops" },
         };
 
         public static SortedSet<string> MapIcons = new SortedSet<string>(MapIconNames.Keys);
-
-        public static void Safe(Action a)
-        {
-            try
-            {
-                a();
-            }
-            catch (Exception e)
-            {
-                PluginLog.Error($"{e.Message}\n{e.StackTrace ?? ""}");
-            }
-        }
     }
 }

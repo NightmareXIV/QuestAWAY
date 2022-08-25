@@ -17,11 +17,12 @@ namespace QuestAWAY
         public bool Minimap = true;
         public bool Bigmap = true;
         public bool QuickEnable = true;
-        public HashSet<string> HiddenTextures = new HashSet<string>();
+        public HashSet<string> HiddenTextures = new();
         public string CustomPathes = "";
         public bool HideFateCircles = false;
         public bool HideAreaMarkers = false;
         public bool AetheryteInFront = false;
+        public Dictionary<uint, Configuration> ZoneHiddenTextures = new();
 
         [NonSerialized]
         private QuestAWAY p;

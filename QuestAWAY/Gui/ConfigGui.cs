@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static QuestAWAY.QuestAWAY;
 
-namespace QuestAWAY
+namespace QuestAWAY.Gui
 {
     internal class ConfigGui : Window
     {
@@ -84,8 +84,8 @@ namespace QuestAWAY
                     {
                         ImGui.Text("Total time: " + P.totalTime);
                         ImGui.Text("Total ticks: " + P.totalTicks);
-                        ImGui.Text("Tick avg: " + (float)P.totalTime / (float)P.totalTicks);
-                        ImGui.Text("MS avg: " + ((float)P.totalTime / (float)P.totalTicks) / (float)Stopwatch.Frequency * 1000 + " ms");
+                        ImGui.Text("Tick avg: " + P.totalTime / (float)P.totalTicks);
+                        ImGui.Text("MS avg: " + P.totalTime / (float)P.totalTicks / Stopwatch.Frequency * 1000 + " ms");
                         if (ImGui.Button("Reset##SW"))
                         {
                             P.totalTicks = 0;
@@ -124,7 +124,7 @@ namespace QuestAWAY
             ImGui.Columns(numColumns);
             for (var i = 0; i < numColumns; i++)
             {
-                ImGui.SetColumnWidth(i, width / (float)numColumns);
+                ImGui.SetColumnWidth(i, width / numColumns);
             }
             foreach (var e in Static.MapIcons)
             {
