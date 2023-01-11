@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Dalamud.Hooking;
 using Dalamud.Interface.Windowing;
 using QuestAWAY.Gui;
+using ECommons;
 
 namespace QuestAWAY
 {
@@ -96,13 +97,13 @@ namespace QuestAWAY
                     t.Dispose();
                 }
             });
-            ECommons.ECommons.Dispose();
+            ECommonsMain.Dispose();
             P = null;
         }
 
         public QuestAWAY(DalamudPluginInterface pluginInterface)
         {
-            ECommons.ECommons.Init(pluginInterface);
+            ECommonsMain.Init(pluginInterface, this);
             P = this;
             //this is because Dalamud can now execute constructor in different thread, which we never want
             new TickScheduler(delegate
