@@ -24,7 +24,7 @@ namespace QuestAWAY
             {
                 if (!P.textures.ContainsKey(partialPath))
                 {
-                    P.textures[partialPath] = Svc.Data.GetImGuiTexture(partialPath + ".tex");
+                    P.textures[partialPath] = Svc.Texture.GetTextureFromGame(partialPath + ".tex");
                 }
                 ImGui.Image(P.textures[partialPath].ImGuiHandle, Vector2Scale, Vector2.Zero, Vector2.One, Vector4.One);
             }

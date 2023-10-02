@@ -1,10 +1,10 @@
 ﻿using System;
 using Dalamud.Game;
-using Dalamud.Logging;
+using ECommons.Logging;
 
 namespace QuestAWAY;
 
-internal class PluginAddressResolver : BaseAddressResolver
+internal class PluginAddressResolver
 {
     // to update this sig:
     // breakpoint Component::GUI::AtkResNode_SetVisibility with parameters (x, 1)
@@ -49,7 +49,7 @@ internal class PluginAddressResolver : BaseAddressResolver
     public IntPtr AreaMapOnMouseMoveAddress { get; private set; }
 
     /// <inheritdoc/>
-    protected override void Setup64Bit(SigScanner scanner)
+    internal void Setup64Bit(ISigScanner scanner)
     {
         AddonAreaMapOnUpdateAddress = scanner.ScanText(AddonAreaMapOnUpdate);
         AddonNaviMapOnUpdateAddress = scanner.ScanText(AddonNaviMapOnUpdate);

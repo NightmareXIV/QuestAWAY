@@ -22,6 +22,9 @@ using Dalamud.Hooking;
 using Dalamud.Interface.Windowing;
 using QuestAWAY.Gui;
 using ECommons;
+using Dalamud.Interface.Utility;
+using ECommons.Schedulers;
+using Dalamud.Interface.Internal;
 
 namespace QuestAWAY
 {
@@ -35,7 +38,7 @@ namespace QuestAWAY
         internal HashSet<string> userDefinedTextureSet = new HashSet<string>();
         internal Vector2 quickMenuPos = new Vector2(0f, 0f);
         internal Vector2 quickMenuSize = Vector2.Zero;
-        internal Dictionary<string, TextureWrap> textures;
+        internal Dictionary<string, IDalamudTextureWrap> textures;
         internal Configuration cfg;
         internal static Vector2 Vector2Scale = new Vector2(48f, 48f);
         internal bool onlySelected = false;
@@ -116,21 +119,21 @@ namespace QuestAWAY
                 Static.PaddingVector = ImGui.GetStyle().WindowPadding;
 
                 // hook setup
-                addressResolver.Setup();
+                addressResolver.Setup64Bit(Svc.SigScanner);
 #pragma warning disable CS0618
                 AddonAreaMapOnUpdateHook =
-                    new Hook<AddonAreaMapOnUpdateDelegate>(addressResolver.AddonAreaMapOnUpdateAddress,
+                    Svc.Hook.HookFromAddress<AddonAreaMapOnUpdateDelegate>(addressResolver.AddonAreaMapOnUpdateAddress,
                         AddonAreaMapOnUpdateDetour);
                 AddonNaviMapOnUpdateHook =
-                    new Hook<AddonNaviMapOnUpdateDelegate>(addressResolver.AddonNaviMapOnUpdateAddress,
+                    Svc.Hook.HookFromAddress<AddonNaviMapOnUpdateDelegate>(addressResolver.AddonNaviMapOnUpdateAddress,
                         AddonNaviMapOnUpdateDetour);
                 NaviMapOnMouseMoveHook =
-                    new Hook<NaviMapOnMouseMoveDelegate>(addressResolver.NaviMapOnMouseMoveAddress,
+                    Svc.Hook.HookFromAddress<NaviMapOnMouseMoveDelegate>(addressResolver.NaviMapOnMouseMoveAddress,
                         NaviMapOnMouseMoveDetour);
-                CheckAtkCollisionNodeIntersectHook = new Hook<CheckAtkCollisionNodeIntersectDelegate>(
+                CheckAtkCollisionNodeIntersectHook = Svc.Hook.HookFromAddress<CheckAtkCollisionNodeIntersectDelegate>(
                     addressResolver.CheckAtkCollisionNodeIntersectAddress, CheckAtkCollisionNodeIntersectDetour);
                 AreaMapOnMouseMoveHook =
-                    new Hook<AreaMapOnMouseMoveDelegate>(addressResolver.AreaMapOnMouseMoveAddress,
+                    Svc.Hook.HookFromAddress<AreaMapOnMouseMoveDelegate>(addressResolver.AreaMapOnMouseMoveAddress,
                         AreaMapOnMouseMoveDetour);
                 AddonAreaMapOnUpdateHook.Enable();
                 NaviMapOnMouseMoveHook.Enable();
@@ -148,11 +151,11 @@ namespace QuestAWAY
                     HelpMessage = "open/close configuration"
                 });
                 Svc.ClientState.TerritoryChanged += ClientState_TerritoryChanged;
-                ClientState_TerritoryChanged(null, Svc.ClientState.TerritoryType);
-            }, Svc.Framework);
+                ClientState_TerritoryChanged(Svc.ClientState.TerritoryType);
+            });
         }
 
-        internal void ClientState_TerritoryChanged(object sender, ushort e)
+        internal void ClientState_TerritoryChanged(ushort e)
         {
             if(!cfg.ZoneSettings.TryGetValue(e, out CurrentProfile))
             {

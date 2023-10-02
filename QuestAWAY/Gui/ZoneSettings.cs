@@ -66,7 +66,7 @@ namespace QuestAWAY.Gui
                 if(ImGui.SmallButton("Delete settings") && ImGui.GetIO().KeyCtrl)
                 {
                     P.cfg.ZoneSettings.Remove(zoneConfigId);
-                    P.ClientState_TerritoryChanged(null, Svc.ClientState.TerritoryType);
+                    P.ClientState_TerritoryChanged(Svc.ClientState.TerritoryType);
                 }
                 ImGuiEx.Tooltip("Hold CTRL and click");
                 if (zoneConfigId != Svc.ClientState.TerritoryType)
@@ -81,7 +81,7 @@ namespace QuestAWAY.Gui
                 if(zoneConfigId != 0 && ImGui.Button("Create custom settings"))
                 {
                     P.cfg.ZoneSettings.Add(zoneConfigId, new());
-                    P.ClientState_TerritoryChanged(null, Svc.ClientState.TerritoryType);
+                    P.ClientState_TerritoryChanged(Svc.ClientState.TerritoryType);
                 }
             }
         }

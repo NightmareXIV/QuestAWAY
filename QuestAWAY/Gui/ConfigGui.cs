@@ -17,6 +17,7 @@ namespace QuestAWAY.Gui
     {
         public ConfigGui() : base("QuestAWAY configuration")
         {
+            KoFiButton.IsOfficialPlugin = true;
         }
 
         public override void OnClose()
@@ -35,11 +36,11 @@ namespace QuestAWAY.Gui
         {
             P.reprocessAreaMap = true;
             P.reprocessNaviMap = true;
-            ImGuiEx.EzTabBar("questaway",
+            KoFiButton.DrawRight();
+            ImGuiEx.EzTabBar("questaway", true,
                 ("Global settings", MainSettings.Draw, null, true),
                 ("Per-zone settings", ZoneSettings.Draw, null, true),
-                ("Developer functions", DevSettings.Draw, null, true),
-                ("Contribute", Donation.DonationTabDraw, null, true)
+                ("Developer functions", DevSettings.Draw, null, true)
                 );
 
             
