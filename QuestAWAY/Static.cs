@@ -190,7 +190,7 @@ namespace QuestAWAY
                 { "ui/icon/060000/060570", "Market board" },
                 { "ui/icon/060000/060571", "Hunting log" },
                 { "ui/icon/060000/060581", "Weather forecast" },
-                { "ui/icon/060000/060582", "" },
+                { "ui/icon/060000/060582", "Gold Saucer employee" },
                 { "ui/icon/060000/060600", "Vundu/Gundu Stronghold" },
                 { "ui/icon/060000/060601", "Gnath/Loth Stronghold" },
                 { "ui/icon/060000/060603", "Qalyana Stronghold" },
