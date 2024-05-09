@@ -410,29 +410,51 @@ namespace QuestAWAY
                         && imageNode->AtkResNode.AddBlue == 128 && imageNode->AtkResNode.AddGreen == 48 && imageNode->AtkResNode.MultiplyBlue == 100 && imageNode->AtkResNode.MultiplyGreen == 60)
                         )
                     {
-                        if (mapIconNode->AtkResNode.Color.A != 0) mapIconNode->AtkResNode.Color.A = 0;
+                        if (isAreaMap && StartsWith(fNamePtr, areaMarkerTexture))
+                        {
+                            if (mapIconNode->AtkResNode.Color.A != 0) mapIconNode->AtkResNode.Color.A = 0;
+                        }
+                        else
+                        {
+                            if (mapIconNode->AtkResNode.IsVisible) mapIconNode->AtkResNode.ToggleVisibility(false);
+                        }
                     }
                     else
                     {
-                        if (mapIconNode->AtkResNode.Color.A == 0) mapIconNode->AtkResNode.Color.A = 0xff;
+                        if (isAreaMap && StartsWith(fNamePtr, areaMarkerTexture))
+                        {
+                            if (mapIconNode->AtkResNode.Color.A == 0) mapIconNode->AtkResNode.Color.A = 0xff;
+                        }
+                        else
+                        {
+                            if (!mapIconNode->AtkResNode.IsVisible) mapIconNode->AtkResNode.ToggleVisibility(true);
+                        }
                     }
 
                     if (isAreaMap && (CurrentProfile.HideAreaMarkers || reprocessAreaMap) && StartsWith(fNamePtr, areaMarkerTexture))
                     {
                         if (CurrentProfile.HideAreaMarkers)
                         {
-                            if (imageNode->AtkResNode.Color.A != 0) imageNode->AtkResNode.Color.A = 0;
+                            if (imageNode->AtkResNode.IsVisible) imageNode->AtkResNode.ToggleVisibility(false);
                         }
                         else
                         {
-                            if (imageNode->AtkResNode.Color.A == 0) imageNode->AtkResNode.Color.A = 0xff;
+                            if (!imageNode->AtkResNode.IsVisible) imageNode->AtkResNode.ToggleVisibility(true);
                         }
                     }
                 }
                 else
                 {
-                    if (mapIconNode->AtkResNode.Color.A == 0) mapIconNode->AtkResNode.Color.A = 0xff;
-                    if (StartsWith(fNamePtr, areaMarkerTexture) && imageNode->AtkResNode.Color.A == 0) imageNode->AtkResNode.Color.A = 0xff;
+                    if (isAreaMap && StartsWith(fNamePtr, areaMarkerTexture))
+                    {
+                        if (mapIconNode->AtkResNode.Color.A == 0) mapIconNode->AtkResNode.Color.A = 0xff;
+                        if (StartsWith(fNamePtr, areaMarkerTexture) && imageNode->AtkResNode.Color.A == 0) imageNode->AtkResNode.Color.A = 0xff;
+                    }
+                    else
+                    {
+                        if (!mapIconNode->AtkResNode.IsVisible) mapIconNode->AtkResNode.ToggleVisibility(true);
+                        if (StartsWith(fNamePtr, areaMarkerTexture) && !imageNode->AtkResNode.IsVisible) imageNode->AtkResNode.ToggleVisibility(true);
+                    }
                 }
             }
         }
