@@ -150,7 +150,7 @@ namespace QuestAWAY
                 { "ui/icon/060000/060441", "Adjoining area marker" },
                 { "ui/icon/060000/060442", "Subarea marker" },
                 { "ui/icon/060000/060443", "Player marker" },
-                { "ui/icon/060000/060444", "Party member marker"},
+                { "ui/icon/060000/060421", "Party member marker"},
                 { "ui/icon/060000/060446", "Upstairs marker" },
                 { "ui/icon/060000/060447", "Downstairs marker" },
                 { "ui/icon/060000/060448", "Settlement" },
