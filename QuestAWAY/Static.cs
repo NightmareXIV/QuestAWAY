@@ -267,8 +267,9 @@ namespace QuestAWAY
                 { "ui/icon/063000/063920", "" },
                 { "ui/icon/063000/063921", "Lore quest" },
                 { "ui/icon/063000/063922", "Itinerant Moogle" },
-                { "ui/icon/063000/063934", "Unavailable studium delivery" },
                 { "ui/icon/063000/063932", "Studium delivery" },
+                { "ui/icon/063000/063933", "Dialog interaction" },
+                { "ui/icon/063000/063934", "Unavailable studium delivery" },
                 { "ui/icon/063000/063971", "Deep-Dungeon entry" },
                 { "ui/icon/063000/063972", "The Forbidden Land, Eureka" },
 #region Island Icons
