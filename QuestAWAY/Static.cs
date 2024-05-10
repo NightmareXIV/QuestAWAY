@@ -110,8 +110,8 @@ namespace QuestAWAY
         {
                 { "ui/icon/060000/060091", "Gemstone trader" },
                 { "ui/icon/060000/060311", "Chocobo porter" },
-                { "ui/icon/060000/060314", "" },
-#region Guild Icons
+                #region Guild Icons
+                { "ui/icon/060000/060314", "Adventurer's guild" },
                 { "ui/icon/060000/060318", "Botanists' guild" },
                 { "ui/icon/060000/060319", "Conjurers' guild" },
                 { "ui/icon/060000/060320", "Archers' guild" },
@@ -135,12 +135,12 @@ namespace QuestAWAY
                 { "ui/icon/060000/060362", "Rogues' guild" },
                 { "ui/icon/060000/060363", "Astrologians' guild" },
                 { "ui/icon/060000/060364", "Machinists' guild" },
-#endregion
-                { "ui/icon/060000/060404", "" },
+                #endregion
+                { "ui/icon/060000/060404", "" }, // Gold chalice from IDK where
                 { "ui/icon/060000/060412", "General purpose merchant" },
                 { "ui/icon/060000/060414", "Dungeon" },
                 { "ui/icon/060000/060421", "Party member marker"},
-                { "ui/icon/060000/060422", "" },
+                { "ui/icon/060000/060422", "Aggro enemy marker" },
                 { "ui/icon/060000/060425", "Retainer bell" },
                 { "ui/icon/060000/060426", "Retainer NPC" },
                 { "ui/icon/060000/060427", "Linkshell aquisition" },
@@ -161,13 +161,13 @@ namespace QuestAWAY
                 { "ui/icon/060000/060456", "Ferry docks" },
                 { "ui/icon/060000/060457", "Next area" },
                 { "ui/icon/060000/060458", "FATE NPC" },
-                { "ui/icon/060000/060459", "" },
+                { "ui/icon/060000/060459", "Dueling Area" },
                 { "ui/icon/060000/060460", "Free Company chest" },
                 { "ui/icon/060000/060467", "Gate to next area" },
                 { "ui/icon/060000/060473", "Specialist NPC" },
                 { "ui/icon/060000/060495", "Quest area marker" },
                 { "ui/icon/060000/060496", "Quest area marker" },
-#region FATE Icons
+                #region FATE Icons
                 { "ui/icon/060000/060501", "Mobbing FATE" },
                 { "ui/icon/060000/060502", "Boss FATE" },
                 { "ui/icon/060000/060503", "Collect items FATE" },
@@ -176,17 +176,17 @@ namespace QuestAWAY
                 { "ui/icon/060000/060506", "Chase FATE" },
                 { "ui/icon/060000/060507", "Chase FATE" },
                 { "ui/icon/060000/060512", "Collect FATE turn-in NPC marker" },
-#endregion
-                { "ui/icon/060000/060545", "" },
+                #endregion
+                { "ui/icon/060000/060545", "" }, // Down arrow where is this used?
                 { "ui/icon/060000/060551", "Delivery Moogle" },
                 { "ui/icon/060000/060554", "Sahagin Stronghold" },
                 { "ui/icon/060000/060555", "Sylph Stronghold" },
                 { "ui/icon/060000/060561", "Marker placed by user" },
-#region Grand company
+                #region Grand company
                 { "ui/icon/060000/060567", "Grand company: Maelstrom" },
                 { "ui/icon/060000/060568", "Grand company: Order of the Twin Adder" },
                 { "ui/icon/060000/060569", "Grand company: Immortal Flames" },
-#endregion
+                #endregion
                 { "ui/icon/060000/060570", "Market board" },
                 { "ui/icon/060000/060571", "Hunting log" },
                 { "ui/icon/060000/060581", "Weather forecast" },
@@ -195,7 +195,7 @@ namespace QuestAWAY
                 { "ui/icon/060000/060601", "Gnath/Loth Stronghold" },
                 { "ui/icon/060000/060603", "Qalyana Stronghold" },
                 { "ui/icon/060000/060604", "Red Stronghold" },
-#region FC Housing Icons
+                #region FC Housing Icons
                 { "ui/icon/060000/060751", "Free Company cottage - locked" },
                 { "ui/icon/060000/060752", "Free Company house - locked" },
                 { "ui/icon/060000/060753", "Free Company mansion - locked" },
@@ -203,9 +203,9 @@ namespace QuestAWAY
                 { "ui/icon/060000/060755", "Free Company house" },
                 { "ui/icon/060000/060756", "Free Company mansion" },
                 { "ui/icon/060000/060757", "Free Company housing lot purchased - awaiting Permit" },
-#endregion
+                #endregion
                 { "ui/icon/060000/060758", "Housing lot available for purchase" },
-#region User FC Housing Icons
+                #region User FC Housing Icons
                 { "ui/icon/060000/060761", "User Free Company cottage - locked" },
                 { "ui/icon/060000/060762", "User Free Company house - locked" },
                 { "ui/icon/060000/060763", "User Free Company mansion - locked" },
@@ -213,9 +213,9 @@ namespace QuestAWAY
                 { "ui/icon/060000/060765", "User Free Company house" },
                 { "ui/icon/060000/060766", "User Free Company mansion" },
                 { "ui/icon/060000/060767", "User Free Company housing lot purchased - awaiting Permit" },
-#endregion
+                #endregion
                 { "ui/icon/060000/060768", "Resident caretaker" },
-#region Individual Housing Icons
+                #region Individual Housing Icons
                 { "ui/icon/060000/060769", "Individual cottage - locked" },
                 { "ui/icon/060000/060770", "Individual house - locked" },
                 { "ui/icon/060000/060771", "Individual mansion - locked" },
@@ -223,8 +223,8 @@ namespace QuestAWAY
                 { "ui/icon/060000/060773", "Individual house" },
                 { "ui/icon/060000/060774", "Individual mansion" },
                 { "ui/icon/060000/060775", "Housing lot purchased - awaiting Permit" },
-#endregion
-#region User Individual Housing Icons
+                #endregion
+                #region User Individual Housing Icons
                 { "ui/icon/060000/060776", "User Individual cottage - locked" },
                 { "ui/icon/060000/060777", "User Individual house - locked" },
                 { "ui/icon/060000/060778", "User Individual mansion - locked" },
@@ -232,23 +232,25 @@ namespace QuestAWAY
                 { "ui/icon/060000/060780", "User Individual house" },
                 { "ui/icon/060000/060781", "User Individual mansion" },
                 { "ui/icon/060000/060782", "User housing lot purchased - awaiting Permit" },
-#endregion
-#region Shared Individual Housing Icons
+                #endregion
+                #region Shared Individual Housing Icons
                 { "ui/icon/060000/060783", "Shared Individual cottage - locked" },
                 { "ui/icon/060000/060784", "Shared Individual house - locked" },
                 { "ui/icon/060000/060785", "Shared Individual mansion - locked" },
                 { "ui/icon/060000/060786", "Shared Individual cottage" },
                 { "ui/icon/060000/060787", "Shared Individual house" },
                 { "ui/icon/060000/060788", "Shared Individual mansion" },
-#endregion
-#region Apartment Icons
+                #endregion
+                #region Apartment Icons
                 { "ui/icon/060000/060789", "Apartment building" },
                 { "ui/icon/060000/060791", "Rented apartment building" },
-#endregion
+                #endregion
+                #region Deep Dungeon
                 { "ui/icon/060000/060905", "Cairn of return - inactive" },
                 { "ui/icon/060000/060906", "Cairn of return - active" },
                 { "ui/icon/060000/060907", "Cairn of passage - inactive" },
                 { "ui/icon/060000/060908", "Cairn of passage - active" },
+                #endregion
                 { "ui/icon/060000/060910", "Materia melder" },
                 { "ui/icon/060000/060926", "Wonderous tails" },
                 { "ui/icon/060000/060927", "Custom delivery" },
@@ -258,22 +260,25 @@ namespace QuestAWAY
                 { "ui/icon/060000/060959", "Aetheryte - Eureka" },
                 { "ui/icon/060000/060960", "Masked Rose" },
                 { "ui/icon/060000/060968", "Magia melder" },
+                { "ui/icon/060000/060969", "Donation basket" },
                 { "ui/icon/060000/060971", "Exit - Eureka" },
                 { "ui/icon/060000/060983", "Blue Mage activity" },
                 { "ui/icon/060000/060986", "Crystarum deliveries" },
                 { "ui/icon/060000/060987", "Gemstone trader" },
-                { "ui/icon/060000/060988", "" },
-                { "ui/icon/060000/060993", "" },
+                { "ui/icon/060000/060988", "" }, // Second inn style maybe island sanctuary?
+                { "ui/icon/060000/060993", "Skybuilder's board" },
                 { "ui/icon/061000/061731", "Eureka Expedition" },
-                { "ui/icon/063000/063903", "" },
-                { "ui/icon/063000/063905", "" },
+                { "ui/icon/063000/063903", "Kupo of fortune" },
+                { "ui/icon/063000/063905", "Ocean fishing" },
+                { "ui/icon/063000/063907", "Windmire" },
                 { "ui/icon/063000/063919", "Sundry splendors" },
-                { "ui/icon/063000/063920", "" },
+                { "ui/icon/063000/063920", "Faux hollows" },
                 { "ui/icon/063000/063921", "Lore quest" },
                 { "ui/icon/063000/063922", "Itinerant Moogle" },
                 { "ui/icon/063000/063932", "Studium delivery" },
                 { "ui/icon/063000/063933", "Dialog interaction" },
                 { "ui/icon/063000/063934", "Unavailable studium delivery" },
+                { "ui/icon/063000/063970", "Island sanctuary ferry" },
                 { "ui/icon/063000/063971", "Deep-Dungeon entry" },
                 { "ui/icon/063000/063972", "The Forbidden Land, Eureka" },
 #region Island Icons
