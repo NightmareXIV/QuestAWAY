@@ -132,7 +132,7 @@ namespace QuestAWAY
             { "ui/icon/060000/060363", "Astrologians' guild" },
             { "ui/icon/060000/060364", "Machinists' guild" },
             #endregion
-            { "ui/icon/060000/060404", "" }, // Gold chalice from IDK where
+            { "ui/icon/060000/060404", "Achievement exchange" },
             { "ui/icon/060000/060412", "General purpose merchant" },
             { "ui/icon/060000/060414", "Dungeon" },
             { "ui/icon/060000/060421", "Party member marker"},
