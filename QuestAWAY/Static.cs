@@ -174,9 +174,9 @@ namespace QuestAWAY
             { "ui/icon/060000/060512", "Collect FATE turn-in NPC marker" },
             #endregion
             #region Area extra markers
-            { "ui/icon/060000.600542", "Small area above player marker" },
-            { "ui/icon/060000.600543", "Medium area above player marker" },
-            { "ui/icon/060000.600544", "Large area above player marker" },
+            { "ui/icon/060000/060541", "Small area above player marker" },
+            { "ui/icon/060000/060542", "Medium area above player marker" },
+            { "ui/icon/060000/060543", "Large area above player marker" },
             { "ui/icon/060000/060545", "Small area below player marker" },
             { "ui/icon/060000/060546", "Medium area below player marker" },
             { "ui/icon/060000/060547", "Large Area below player marker" },
