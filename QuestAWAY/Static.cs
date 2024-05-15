@@ -179,10 +179,10 @@ namespace QuestAWAY
             { "ui/icon/060000/060545", "Small area below player marker" },
             { "ui/icon/060000/060546", "Medium area below player marker" },
             { "ui/icon/060000/060547", "Large Area below player marker" },
+#endregion
             { "ui/icon/060000/060551", "Delivery Moogle" },
             { "ui/icon/060000/060554", "Sahagin Stronghold" },
             { "ui/icon/060000/060555", "Sylph Stronghold" },
-#endregion
 #region Grand company
             { "ui/icon/060000/060567", "Grand company: Maelstrom" },
             { "ui/icon/060000/060568", "Grand company: Order of the Twin Adder" },
