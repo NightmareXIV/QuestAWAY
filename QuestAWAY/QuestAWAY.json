@@ -6,5 +6,10 @@
   "ApplicableVersion": "any",
   "RepoUrl": "https://github.com/NightmareXIV/QuestAWAY",
   "LoadPriority": 0,
-  "Punchline": "Removes unwanted icons from your map."
+  "Punchline": "Removes unwanted icons from your map.",
+  "tags": [
+    "map",
+    "quest",
+    "nightmarexiv"
+  ]
 }

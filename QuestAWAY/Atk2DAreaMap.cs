@@ -1,5 +1,5 @@
-﻿using System.Runtime.InteropServices;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+﻿using FFXIVClientStructs.FFXIV.Component.GUI;
+using System.Runtime.InteropServices;
 
 namespace QuestAWAY;
 

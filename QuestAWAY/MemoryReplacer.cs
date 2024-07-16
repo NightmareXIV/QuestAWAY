@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Dalamud;
-using Dalamud.Logging;
+﻿using Dalamud;
+using ECommons.Logging;
+using System;
 
 namespace QuestAWAY;
 
@@ -17,6 +15,7 @@ public class MemoryReplacer : IDisposable
     public MemoryReplacer(string sig, byte[] bytes, bool startEnabled = false)
     {
         var addr = IntPtr.Zero;
+
         try
         {
             addr = Svc.SigScanner.ScanText(sig);
@@ -30,37 +29,50 @@ public class MemoryReplacer : IDisposable
 
         Address = addr;
         newBytes = bytes;
+
         SafeMemory.ReadBytes(addr, bytes.Length, out oldBytes);
 
         if (startEnabled)
+        {
             Enable();
+        }
     }
 
     public void Enable()
     {
         if (!IsValid) return;
+
         SafeMemory.WriteBytes(Address, newBytes);
+
         IsEnabled = true;
     }
 
     public void Disable()
     {
         if (!IsValid) return;
+
         SafeMemory.WriteBytes(Address, oldBytes);
+
         IsEnabled = false;
     }
 
     public void Toggle()
     {
         if (!IsEnabled)
+        {
             Enable();
+        }
         else
+        {
             Disable();
+        }
     }
 
     public void Dispose()
     {
         if (IsEnabled)
+        {
             Disable();
+        }
     }
 }

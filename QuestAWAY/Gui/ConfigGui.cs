@@ -1,24 +1,14 @@
-﻿using Dalamud.Interface;
-using Dalamud.Interface.Windowing;
+﻿using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
-using static QuestAWAY.QuestAWAY;
 
 namespace QuestAWAY.Gui
 {
     internal class ConfigGui : Window
     {
         public ConfigGui() : base("QuestAWAY configuration")
-        {
-            KoFiButton.IsOfficialPlugin = true;
-        }
+        { }
 
         public override void OnClose()
         {
@@ -36,14 +26,12 @@ namespace QuestAWAY.Gui
         {
             P.reprocessAreaMap = true;
             P.reprocessNaviMap = true;
-            KoFiButton.DrawRight();
-            ImGuiEx.EzTabBar("questaway", true,
+
+            ImGuiEx.EzTabBar("questaway",
                 ("Global settings", MainSettings.Draw, null, true),
                 ("Per-zone settings", ZoneSettings.Draw, null, true),
                 ("Developer functions", DevSettings.Draw, null, true)
                 );
-
-            
         }
     }
 }
