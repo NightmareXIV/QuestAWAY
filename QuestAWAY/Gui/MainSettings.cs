@@ -1,7 +1,6 @@
 ﻿using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using ECommons.ImGuiMethods;
-using ECommons.Logging;
 using ImGuiNET;
 using Newtonsoft.Json;
 using System;
