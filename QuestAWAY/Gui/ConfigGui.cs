@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.Windowing;
+using ECommons.Funding;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using System.Numerics;
@@ -26,8 +27,8 @@ namespace QuestAWAY.Gui
         {
             P.reprocessAreaMap = true;
             P.reprocessNaviMap = true;
-
-            ImGuiEx.EzTabBar("questaway",
+            PatreonBanner.DrawRight();
+            ImGuiEx.EzTabBar("questaway", PatreonBanner.Text,
                 ("Global settings", MainSettings.Draw, null, true),
                 ("Per-zone settings", ZoneSettings.Draw, null, true),
                 ("Developer functions", DevSettings.Draw, null, true)
