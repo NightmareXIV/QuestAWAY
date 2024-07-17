@@ -76,9 +76,24 @@ namespace QuestAWAY.Gui
             ImGui.Text("Special hiding options:");
             ImGui.Checkbox("Hide fate circles", ref config.HideFateCircles);
             ImGui.Checkbox("Hide subarea markers, but keep text", ref config.HideAreaMarkers);
-            ImGui.Text("Icons to hide:");
+            ImGui.Text("Category:");
             ImGui.SameLine();
-            ImGui.Checkbox("Only selected", ref P.onlySelected);
+            ImGui.SetNextItemWidth(200f);
+
+            if (ImGui.BeginCombo("##QASELCAT", Static.CategoryNames[P.selectedCategory]))
+            {
+                foreach (var cat in Static.CategoryNames)
+                {
+                    if (ImGui.Selectable(cat.Value, P.selectedCategory == cat.Key))
+                    {
+                        P.selectedCategory = cat.Key;
+                    }
+                }
+
+                ImGui.EndCombo();
+            }
+
+            ImGui.Text("Quick select:");
             ImGui.SameLine();
             ImGui.SetNextItemWidth(100f);
 
@@ -89,7 +104,8 @@ namespace QuestAWAY.Gui
                     if (P.selectedCategory == Category.All)
                     {
                         config.HiddenTextures.UnionWith(Static.MapIcons);
-                    } else
+                    }
+                    else
                     {
                         config.HiddenTextures.UnionWith(Static.MapIcons.Where(e => Static.MapIconNames[e].Category == P.selectedCategory));
                     }
@@ -114,18 +130,8 @@ namespace QuestAWAY.Gui
                 ImGui.EndCombo();
             }
 
-            if (ImGui.BeginCombo("##QASELCAT", Static.CategoryNames[P.selectedCategory]))
-            {
-                foreach (var cat in Static.CategoryNames)
-                {
-                    if (ImGui.Selectable(cat.Value, P.selectedCategory == cat.Key))
-                    {
-                        P.selectedCategory = cat.Key;
-                    }
-                }
-
-                ImGui.EndCombo();
-            }
+            ImGui.SameLine();
+            ImGui.Checkbox("Show only selected", ref P.onlySelected);
 
             //ImGui.BeginChild("##QAWAYCHILD");
             ImGuiHelpers.ScaledDummy(10f);

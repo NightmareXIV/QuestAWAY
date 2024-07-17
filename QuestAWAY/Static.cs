@@ -215,7 +215,7 @@ namespace QuestAWAY
             { "ui/icon/060000/060426", ("Retainer NPC", Category.NPC) },
             { "ui/icon/060000/060427", ("Linkshell aquisition", Category.NPC) },
             { "ui/icon/060000/060428", ("Raid entrance", Category.DungeonRaid) },
-            { "ui/icon/060000/060430", ("Aethernet shard", Category.DungeonRaid) },
+            { "ui/icon/060000/060430", ("Aethernet shard", Category.Miscellanous) },
             { "ui/icon/060000/060434", ("Repairs", Category.NPC) },
             { "ui/icon/060000/060436", ("Inn room", Category.Miscellanous) },
             { "ui/icon/060000/060441", ("Adjoining area marker", Category.AreaMarkers) },
