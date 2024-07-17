@@ -107,7 +107,7 @@ namespace QuestAWAY.Gui
                     }
                     else
                     {
-                        config.HiddenTextures.UnionWith(Static.MapIcons.Where(e => Static.MapIconNames[e].Category == P.selectedCategory));
+                        config.HiddenTextures.UnionWith(Static.MapIcons.Where(e => Static.MapIconData[e].Category == P.selectedCategory));
                     }
 
                     P.BuildHiddenByteSet();
@@ -121,7 +121,7 @@ namespace QuestAWAY.Gui
                     }
                     else
                     {
-                        config.HiddenTextures.ExceptWith(Static.MapIcons.Where(e => Static.MapIconNames[e].Category == P.selectedCategory));
+                        config.HiddenTextures.ExceptWith(Static.MapIcons.Where(e => Static.MapIconData[e].Category == P.selectedCategory));
                     }
 
                     P.BuildHiddenByteSet();
@@ -150,7 +150,7 @@ namespace QuestAWAY.Gui
             {
                 var b = config.HiddenTextures.Contains(e);
 
-                if ((P.selectedCategory == Category.All || P.selectedCategory == Static.MapIconNames[e].Category) && (!P.onlySelected || config.HiddenTextures.Contains(e)))
+                if ((P.selectedCategory == Category.All || P.selectedCategory == Static.MapIconData[e].Category) && (!P.onlySelected || config.HiddenTextures.Contains(e)))
                 {
                     ImGui.Checkbox("##" + e, ref b);
                     ImGui.SameLine();
@@ -161,9 +161,9 @@ namespace QuestAWAY.Gui
                     {
                         ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
 
-                        if (Static.MapIconNames[e].Name.Length > 0 || ImGui.GetIO().KeyCtrl)
+                        if (Static.MapIconData[e].Name.Length > 0 || ImGui.GetIO().KeyCtrl)
                         {
-                            ImGui.SetTooltip(Static.MapIconNames[e].Name.Length > 0 ? Static.MapIconNames[e].Name : e);
+                            ImGui.SetTooltip(Static.MapIconData[e].Name.Length > 0 ? Static.MapIconData[e].Name : e);
                         }
 
                         if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Right))

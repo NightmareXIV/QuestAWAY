@@ -116,7 +116,7 @@ namespace QuestAWAY
 
         public enum Category
         {
-            All,
+            All, // This is a pseudo category and it shouldnt be assigned to an icon
             AlliedSociety,
             AreaMarkers,
             BeginnerQuest,
@@ -143,7 +143,7 @@ namespace QuestAWAY
 
         public static Dictionary<Category, string> CategoryNames = new()
         {
-            { Category.All, "All" },
+            { Category.All, "All" }, // This is a pseudo category and it shouldnt be assigned to an icon
             { Category.AlliedSociety, "Allied Society Markers" },
             { Category.AreaMarkers, "Area Markers" },
             { Category.BeginnerQuest, "Beginner Quest Markers" },
@@ -168,7 +168,7 @@ namespace QuestAWAY
             { Category.TripleTriad, "Triple Triad Markers" },
         };
 
-        public static Dictionary<string, (string Name, Category Category)> MapIconNames = new()
+        public static Dictionary<string, (string Name, Category Category)> MapIconData = new()
         {
             { "ui/icon/060000/060091", ("Gemstone trader", Category.NPC) },
             { "ui/icon/060000/060311", ("Chocobo porter", Category.NPC) },
@@ -502,6 +502,6 @@ namespace QuestAWAY
             #endregion
         };
 
-        public static SortedSet<string> MapIcons = new SortedSet<string>(MapIconNames.Keys);
+        public static SortedSet<string> MapIcons = new SortedSet<string>(MapIconData.Keys);
     }
 }
