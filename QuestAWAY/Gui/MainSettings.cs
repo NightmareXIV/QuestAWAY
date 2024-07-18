@@ -4,6 +4,7 @@ using ECommons.ImGuiMethods;
 using ImGuiNET;
 using Newtonsoft.Json;
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace QuestAWAY.Gui
@@ -75,9 +76,24 @@ namespace QuestAWAY.Gui
             ImGui.Text("Special hiding options:");
             ImGui.Checkbox("Hide fate circles", ref config.HideFateCircles);
             ImGui.Checkbox("Hide subarea markers, but keep text", ref config.HideAreaMarkers);
-            ImGui.Text("Icons to hide:");
+            ImGui.Text("Category:");
             ImGui.SameLine();
-            ImGui.Checkbox("Only selected", ref P.onlySelected);
+            ImGui.SetNextItemWidth(200f);
+
+            if (ImGui.BeginCombo("##QASELCAT", Static.CategoryNames[P.selectedCategory]))
+            {
+                foreach (var cat in Static.CategoryNames)
+                {
+                    if (ImGui.Selectable(cat.Value, P.selectedCategory == cat.Key))
+                    {
+                        P.selectedCategory = cat.Key;
+                    }
+                }
+
+                ImGui.EndCombo();
+            }
+
+            ImGui.Text("Quick select:");
             ImGui.SameLine();
             ImGui.SetNextItemWidth(100f);
 
@@ -85,18 +101,37 @@ namespace QuestAWAY.Gui
             {
                 if (ImGui.Selectable("All"))
                 {
-                    config.HiddenTextures.UnionWith(Static.MapIcons);
+                    if (P.selectedCategory == Category.All)
+                    {
+                        config.HiddenTextures.UnionWith(Static.MapIcons);
+                    }
+                    else
+                    {
+                        config.HiddenTextures.UnionWith(Static.MapIcons.Where(e => Static.MapIconData[e].Category == P.selectedCategory));
+                    }
+
                     P.BuildHiddenByteSet();
                 }
 
                 if (ImGui.Selectable("None"))
                 {
-                    config.HiddenTextures.Clear();
+                    if (P.selectedCategory == Category.All)
+                    {
+                        config.HiddenTextures.Clear();
+                    }
+                    else
+                    {
+                        config.HiddenTextures.ExceptWith(Static.MapIcons.Where(e => Static.MapIconData[e].Category == P.selectedCategory));
+                    }
+
                     P.BuildHiddenByteSet();
                 }
 
                 ImGui.EndCombo();
             }
+
+            ImGui.SameLine();
+            ImGui.Checkbox("Show only selected", ref P.onlySelected);
 
             //ImGui.BeginChild("##QAWAYCHILD");
             ImGuiHelpers.ScaledDummy(10f);
@@ -115,7 +150,7 @@ namespace QuestAWAY.Gui
             {
                 var b = config.HiddenTextures.Contains(e);
 
-                if (!P.onlySelected || config.HiddenTextures.Contains(e))
+                if ((P.selectedCategory == Category.All || P.selectedCategory == Static.MapIconData[e].Category) && (!P.onlySelected || config.HiddenTextures.Contains(e)))
                 {
                     ImGui.Checkbox("##" + e, ref b);
                     ImGui.SameLine();
@@ -126,9 +161,9 @@ namespace QuestAWAY.Gui
                     {
                         ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
 
-                        if (Static.MapIconNames[e].Length > 0 || ImGui.GetIO().KeyCtrl)
+                        if (Static.MapIconData[e].Name.Length > 0 || ImGui.GetIO().KeyCtrl)
                         {
-                            ImGui.SetTooltip(Static.MapIconNames[e].Length > 0 ? Static.MapIconNames[e] : e);
+                            ImGui.SetTooltip(Static.MapIconData[e].Name.Length > 0 ? Static.MapIconData[e].Name : e);
                         }
 
                         if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Right))
@@ -148,12 +183,14 @@ namespace QuestAWAY.Gui
                     if (config.HiddenTextures.Contains(e) && !b)
                     {
                         config.HiddenTextures.Remove(e);
+
                         P.BuildHiddenByteSet();
                     }
 
                     if (!config.HiddenTextures.Contains(e) && b)
                     {
                         config.HiddenTextures.Add(e);
+
                         P.BuildHiddenByteSet();
                     }
                 }
