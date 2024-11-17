@@ -43,6 +43,7 @@ namespace QuestAWAY
         internal long totalTicks;
         internal byte[][] fateTexture;
         internal byte[] areaMarkerTexture;
+        internal Category selectedCategory = Category.All;
         internal Stopwatch stopwatch;
         internal WindowSystem windowSystem;
         internal ConfigGui configGui;
