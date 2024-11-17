@@ -2,7 +2,7 @@
 using ECommons;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System;
 
 namespace QuestAWAY.Gui
