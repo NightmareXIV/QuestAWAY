@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Authors>NightmareXIV</Authors>
-		<Version>2.0.0.8</Version>
+		<Version>2.0.0.9</Version>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -36,10 +36,38 @@
 			<HintPath>$(DalamudLibPath)Dalamud.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
-		<Reference Include="ImGui.NET">
-			<HintPath>$(DalamudLibPath)ImGui.NET.dll</HintPath>
-			<Private>False</Private>
-		</Reference>
+        <Reference Include="Dalamud.Bindings.ImGui">
+            <HintPath>$(DalamudLibPath)Dalamud.Bindings.ImGui.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Dalamud.Bindings.ImPlot">
+            <HintPath>$(DalamudLibPath)Dalamud.Bindings.ImPlot.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Dalamud.Bindings.ImGuizmo">
+            <HintPath>$(DalamudLibPath)Dalamud.Bindings.ImGuizmo.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="TerraFX.Interop.Windows">
+            <HintPath>$(DalamudLibPath)TerraFX.Interop.Windows.dll</HintPath>
+            <Private>False</Private>
+        </Reference>      <Reference Include="Dalamud.Bindings.ImGui">
+          <HintPath>$(DalamudLibPath)Dalamud.Bindings.ImGui.dll</HintPath>
+          <Private>False</Private>
+      </Reference>
+      <Reference Include="Dalamud.Bindings.ImPlot">
+          <HintPath>$(DalamudLibPath)Dalamud.Bindings.ImPlot.dll</HintPath>
+          <Private>False</Private>
+      </Reference>
+      <Reference Include="Dalamud.Bindings.ImGuizmo">
+          <HintPath>$(DalamudLibPath)Dalamud.Bindings.ImGuizmo.dll</HintPath>
+          <Private>False</Private>
+      </Reference>
+      <Reference Include="TerraFX.Interop.Windows">
+          <HintPath>$(DalamudLibPath)TerraFX.Interop.Windows.dll</HintPath>
+          <Private>False</Private>
+      </Reference>
+      
 		<Reference Include="Lumina">
 			<HintPath>$(DalamudLibPath)Lumina.dll</HintPath>
 			<Private>False</Private>
@@ -67,11 +95,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="DalamudPackager" Version="12.0.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
+	  <PackageReference Include="DalamudPackager" Version="13.0.0" />
+	  <PackageReference Include="ECommons" Version="3.0.1.3" />
 	</ItemGroup>
 
 	<ItemGroup>

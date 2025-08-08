@@ -3,7 +3,7 @@ global using static ECommons.GenericHelpers;
 global using static QuestAWAY.QuestAWAY;
 global using static QuestAWAY.Static;
 using Dalamud.Interface;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -20,7 +20,7 @@ namespace QuestAWAY
             {
                 var texture = Svc.Texture.GetFromGame(partialPath + ".tex").GetWrapOrEmpty();
 
-                ImGui.Image(texture.ImGuiHandle, Vector2Scale, Vector2.Zero, Vector2.One, Vector4.One);
+                ImGui.Image(texture.Handle, Vector2Scale, Vector2.Zero, Vector2.One, Vector4.One);
             }
             catch (Exception ex)
             {

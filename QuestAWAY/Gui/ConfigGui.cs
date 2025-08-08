@@ -1,7 +1,7 @@
 ﻿using Dalamud.Interface.Windowing;
 using ECommons.Funding;
 using ECommons.ImGuiMethods;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System.Numerics;
 
 namespace QuestAWAY.Gui

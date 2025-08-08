@@ -31,7 +31,7 @@ internal class PluginAddressResolver
     // to update this sig:
     // from AreaMap ReceiveEvent, find the switch case where a2==5 and the if for a3==20
     // then the only unnamed function there is what we want  (FFXIV 7.01)
-    private const string AreaMapOnMouseMove = "48 8B C4 53 57 48 83 EC 78 48 8B D9";
+    private const string AreaMapOnMouseMove = "E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 1E";
 
     private const string AtkCollisionNodeCheckCollisionAtCoords = "E8 ?? ?? ?? ?? 33 FF 84 C0 48 0F 45 FE";
     private const string AddonAreaMapOnUpdate = "48 8B C4 55 56 48 8D A8 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? F6 81 ?? ?? ?? ?? ??";

@@ -8,7 +8,7 @@ using ECommons;
 using ECommons.Logging;
 using ECommons.Schedulers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using QuestAWAY.Gui;
 using System;
 using System.Collections.Generic;
@@ -83,8 +83,8 @@ namespace QuestAWAY
                 CurrentProfile.Enabled = false;
                 reprocessNaviMap = true;
                 reprocessAreaMap = true;
-                ProcessMinimap((AtkUnitBase*)Svc.GameGui.GetAddonByName("_NaviMap", 1));
-                ProcessAreaMap((AtkUnitBase*)Svc.GameGui.GetAddonByName("AreaMap", 1));
+                ProcessMinimap((AtkUnitBase*)Svc.GameGui.GetAddonByName("_NaviMap", 1).Address);
+                ProcessAreaMap((AtkUnitBase*)Svc.GameGui.GetAddonByName("AreaMap", 1).Address);
 
                 Svc.Commands.RemoveHandler("/questaway");
             });
@@ -329,7 +329,7 @@ namespace QuestAWAY
 
                 if (o != IntPtr.Zero)
                 {
-                    var masterWindow = (AtkUnitBase*)o;
+                    var masterWindow = (AtkUnitBase*)o.Address;
 
                     if (masterWindow->IsVisible && masterWindow->UldManager.NodeListCount > 3)
                     {
